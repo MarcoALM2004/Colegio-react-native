@@ -10,6 +10,14 @@ export default function InicioStudent() {
   const isMobile = width < 600;
   const isTablet = width >= 600 && width < 1000;
 
+  let titleSize;
+
+  if (isMobile) {
+    titleSize = 24;
+  } else {
+    titleSize = 28;
+  }
+
   return (
     <ScrollView
       style={styles.container}
@@ -35,9 +43,7 @@ export default function InicioStudent() {
         style={[
           styles.title,
           {
-            fontSize: isMobile
-              ? 24
-              : 28,
+            fontSize: titleSize,
           },
         ]}
       >
@@ -469,14 +475,14 @@ export default function InicioStudent() {
               style={styles.activityTitle}
               numberOfLines={1}
             >
-              Tarea de Base de Datos
+              Tarea de comunicación
             </Text>
 
             <Text
               style={styles.activityDescription}
               numberOfLines={1}
             >
-              Entrega mañana · Base de Datos
+              Entrega mañana · comunicación
             </Text>
 
           </View>
@@ -553,7 +559,7 @@ export default function InicioStudent() {
               style={styles.activityTitle}
               numberOfLines={1}
             >
-              Examen de Desarrollo
+              Examen de Matematicas
             </Text>
 
             <Text

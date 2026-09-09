@@ -22,20 +22,37 @@ export default function LoginScreen({ navigation }) {
 
   const isMobile = width < 600;
 
-  const iniciarSesion = () => {
+  const iniciarSesion = async () => {
 
     if (!email || !password) {
       alert('Completa todos los campos');
       return;
     }
 
-    if (
-      email === 'prueba@gmail.com' &&
-      password === '123456'
-    ) {
-      navigation.navigate('StudentDashboard');
-    } else {
-      alert('Correo o contraseña incorrectos');
+    try {
+
+      const response = await fetch(
+        'http://10.0.2.2:8080/login',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+        }
+      );
+
+      const resultado = await response.text();
+
+      if (resultado === 'Inicio de sesión correcto') {
+        navigation.navigate('StudentDashboard');
+      } else {
+        alert('Correo o contraseña incorrectos');
+      }
+
+    } catch (error) {
+      alert('No se pudo conectar con el servidor y no se el por que :v');
+      console.log(error);
     }
   };
 
@@ -54,7 +71,7 @@ export default function LoginScreen({ navigation }) {
       >
 
         <Text style={styles.title}>
-          Colegio
+          Iniciar secion
         </Text>
 
 
