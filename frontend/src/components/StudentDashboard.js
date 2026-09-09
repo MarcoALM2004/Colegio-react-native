@@ -1,103 +1,393 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet, Image, useWindowDimensions} from 'react-native';
 
-import Inicio from '../pages/InicioStudent';
+import InicioStudent from '../pages/InicioStudent';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import logoAlcantay from '../image/logosalcantay.png';
 
-export default function StudentDashboard() {
+export default function StudentDashboard({ children }) {
+
+  const navigation = useNavigation();
+  const route = useRoute();
+
+  const isInicio = route.name === 'StudentDashboard';
+  const isCursos = route.name === 'CursosStudent';
+
+  const { width } = useWindowDimensions();
+
+  const isMobile = width < 600;
+  const isTablet = width >= 600 && width < 1000;
+
+  // Menos de 1000px = sidebar compacto
+  const compactSidebar = width < 1000;
+
+  const sidebarWidth = compactSidebar
+    ? 70
+    : 235;
+
+  // Logo del sidebar
+  let logo = null;
+
+  if (!compactSidebar) {
+    logo = (
+      <Text style={styles.logo}>
+        EduConnect
+      </Text>
+    );
+  }
+
   return (
     <View style={styles.container}>
 
       {/* PANEL IZQUIERDO */}
-      <View style={styles.sidebar}>
 
-        <Text style={styles.logo}>
-          GOLEDIO
-        </Text>
+      <View
+        style={[
+          styles.sidebar,
+          {
+            width: sidebarWidth,
+            paddingHorizontal: compactSidebar
+              ? 8
+              : 16,
+          },
+        ]}
+      >
+
+        {logo}
 
         <View style={styles.menu}>
 
-          <TouchableOpacity style={[styles.menuItem, styles.active]}>
-            <Text style={styles.icon}>▦</Text>
-            <Text style={styles.activeText}>Inicio</Text>
+          {/* INICIO */}
+
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              compactSidebar && styles.menuItemMobile,
+              isInicio && styles.active,
+            ]}
+            onPress={() =>
+              navigation.navigate('StudentDashboard')
+            }
+          >
+
+            <Ionicons
+              name="grid"
+              size={19}
+              color={
+                isInicio
+                  ? '#FFFFFF'
+                  : '#7D8798'
+              }
+            />
+
+            {!compactSidebar && (
+              <Text
+                style={
+                  isInicio
+                    ? styles.activeText
+                    : styles.menuText
+                }
+              >
+                Inicio
+              </Text>
+            )}
+
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.icon}>▤</Text>
-            <Text style={styles.menuText}>Cursos</Text>
+
+          {/* CURSOS */}
+
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              compactSidebar && styles.menuItemMobile,
+              isCursos && styles.active,
+            ]}
+            onPress={() =>
+              navigation.navigate('CursosStudent')
+            }
+          >
+
+            <Ionicons
+              name="book-outline"
+              size={19}
+              color={
+                isCursos
+                  ? '#FFFFFF'
+                  : '#7D8798'
+              }
+            />
+
+            {!compactSidebar && (
+              <Text
+                style={
+                  isCursos
+                    ? styles.activeText
+                    : styles.menuText
+                }
+              >
+                Cursos
+              </Text>
+            )}
+
+          </TouchableOpacity>
+      
+          {/* TAREAS */}
+
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              compactSidebar && styles.menuItemMobile,
+            ]}
+          >
+
+            <Ionicons
+              name="document-text-outline"
+              size={19}
+              color="#7D8798"
+            />
+
+            {!compactSidebar && (
+              <Text style={styles.menuText}>
+                Tareas
+              </Text>
+            )}
+
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.icon}>▧</Text>
-            <Text style={styles.menuText}>Tareas</Text>
+
+          {/* CALENDARIO */}
+
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              compactSidebar && styles.menuItemMobile,
+            ]}
+          >
+
+            <Ionicons
+              name="calendar-outline"
+              size={19}
+              color="#7D8798"
+            />
+
+            {!compactSidebar && (
+              <Text style={styles.menuText}>
+                Calendario
+              </Text>
+            )}
+
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.icon}>▦</Text>
-            <Text style={styles.menuText}>Calendario</Text>
+
+          {/* CALIFICACIONES */}
+
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              compactSidebar && styles.menuItemMobile,
+            ]}
+          >
+
+            <Ionicons
+              name="bar-chart-outline"
+              size={19}
+              color="#7D8798"
+            />
+
+            {!compactSidebar && (
+              <Text style={styles.menuText}>
+                Calificaciones
+              </Text>
+            )}
+
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.icon}>▥</Text>
-            <Text style={styles.menuText}>Calificaciones</Text>
-          </TouchableOpacity>
+          {/* MENSAJES */}
 
-          <TouchableOpacity style={styles.menuItem}>
-            <Text style={styles.icon}>◯</Text>
-            <Text style={styles.menuText}>Mensajes</Text>
+          <TouchableOpacity
+            style={[
+              styles.menuItem,
+              compactSidebar && styles.menuItemMobile,
+            ]}
+          >
+
+            <Ionicons
+              name="chatbubble-outline"
+              size={19}
+              color="#7D8798"
+            />
+
+            {!compactSidebar && (
+              <Text style={styles.menuText}>
+                Mensajes
+              </Text>
+            )}
+
           </TouchableOpacity>
 
         </View>
 
-        {/* CONFIGURACIÓN ABAJO */}
-        <TouchableOpacity style={styles.settings}>
-          <Text style={styles.icon}>⚙</Text>
-          <Text style={styles.menuText}>Configuración</Text>
+        {/* CONFIGURACIÓN */}
+
+        <TouchableOpacity
+          style={[
+            styles.settings,
+            compactSidebar && styles.menuItemMobile,
+          ]}
+        >
+
+          <Ionicons
+            name="settings-outline"
+            size={19}
+            color="#7D8798"
+          />
+
+          {!compactSidebar && (
+            <Text style={styles.menuText}>
+              Configuración
+            </Text>
+          )}
+
         </TouchableOpacity>
 
       </View>
 
 
       {/* ÁREA DERECHA */}
+
       <View style={styles.rightSide}>
 
         {/* HEADER */}
-        <View style={styles.header}>
 
-          <View />
+        <View
+          style={[
+            styles.header,
+            {
+              paddingHorizontal: compactSidebar
+                ? 10
+                : 28,
+            },
+          ]}
+        >
 
-          <TouchableOpacity style={styles.userArea}>
+          {/* LOGO ALCANTAY */}
 
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>M</Text>
-            </View>
+          <View style={styles.image}>
 
-            <View style={styles.userInfo}>
-              <Text style={styles.userName}>
-                Marco
-              </Text>
+            <Image
+              source={logoAlcantay}
+              style={[
+                styles.logoImage,
+                {
+                  width: isMobile
+                    ? 90
+                    : isTablet
+                    ? 105
+                    : 120,
 
-              <Text style={styles.userRole}>
-                Estudiante
-              </Text>
-            </View>
+                  height: isMobile
+                    ? 42
+                    : 50,
+                },
+              ]}
+              resizeMode="contain"
+            />
 
-            <Text style={styles.arrow}>
-             ⌄
-            </Text>
+          </View>
 
-          </TouchableOpacity>
+
+          {/* ACCIONES DEL HEADER */}
+
+          <View style={styles.headerActions}>
+
+            {/* NOTIFICACIONES */}
+
+            <TouchableOpacity
+              style={styles.iconButton}
+            >
+
+              <Ionicons
+                name="notifications-outline"
+                size={21}
+                color="#718096"
+              />
+
+            </TouchableOpacity>
+
+
+            {/* USUARIO */}
+
+            <TouchableOpacity
+              style={styles.userArea}
+            >
+
+              {/* AVATAR */}
+
+              <View style={styles.avatar}>
+
+                <Text style={styles.avatarText}>
+                  M
+                </Text>
+
+              </View>
+
+
+              {/* INFORMACIÓN */}
+
+              {!compactSidebar && (
+                <View style={styles.userInfo}>
+
+                  <Text style={styles.userName}>
+                    Marco
+                  </Text>
+
+                  <Text style={styles.userRole}>
+                    Estudiante
+                  </Text>
+
+                </View>
+              )}
+
+
+              {/* FLECHA */}
+
+              {!compactSidebar && (
+                <Ionicons
+                  name="chevron-down-outline"
+                  size={16}
+                  color="#718096"
+                  style={styles.arrow}
+                />
+              )}
+
+            </TouchableOpacity>
+
+          </View>
 
         </View>
 
-
         {/* CONTENIDO */}
-        <View style={styles.content}>
-          <Inicio />
+
+        <View
+          style={[
+            styles.content,
+            {
+              paddingHorizontal: compactSidebar
+                ? 12
+                : 38,
+
+              paddingTop: isMobile
+                ? 15
+                : 25,
+            },
+          ]}
+        >
+
+          {children || <InicioStudent />}
+
         </View>
 
       </View>
@@ -109,57 +399,61 @@ export default function StudentDashboard() {
 
 const styles = StyleSheet.create({
 
+  /* CONTENEDOR  */
+
   container: {
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#F5F7FB',
   },
 
-  /* recuadro */
+
+  /*  SIDEBAR  */
 
   sidebar: {
-    width: 210,
+    width: 235,
     backgroundColor: '#FFFFFF',
-    paddingTop: 30,
-    paddingHorizontal: 18,
+    paddingTop: 28,
+    paddingHorizontal: 16,
     borderRightWidth: 1,
-    borderRightColor: '#E8ECF3',
+    borderRightColor: '#EDF0F5',
   },
+
 
   logo: {
     fontSize: 21,
     fontWeight: '800',
     color: '#273244',
     marginLeft: 12,
-    marginBottom: 50,
+    marginBottom: 38,
   },
+
 
   menu: {
-    gap: 8,
+    gap: 7,
   },
 
+
   menuItem: {
-    height: 45,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 13,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
+    gap: 13,
   },
+
+
+  menuItemMobile: {
+    justifyContent: 'center',
+    paddingHorizontal: 0,
+  },
+
 
   active: {
-    backgroundColor: '#2864E8',
+    backgroundColor: '#2563EB',
   },
 
-  icon: {
-    width: 30,
-    fontSize: 17,
-    color: '#7C899F',
-  },
-
-  menuText: {
-    fontSize: 13,
-    color: '#718096',
-  },
 
   activeText: {
     fontSize: 13,
@@ -167,57 +461,101 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  settings: {
-    marginTop: 'auto',
-    height: 45,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    marginBottom: 20,
+
+  menuText: {
+    fontSize: 13,
+    color: '#7D8798',
   },
 
 
-  /*ÁREA DERECHA */
+  settings: {
+    marginTop: 'auto',
+    height: 44,
+    borderRadius: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    gap: 13,
+    marginBottom: 18,
+  },
+
+
+  /* ÁREA DERECHA  */
 
   rightSide: {
     flex: 1,
   },
 
 
-  /* HEADER*/
+  /* HEADER */
 
   header: {
-    height: 85,
-    backgroundColor: '#dbf9ff',
+    height: 73,
+    backgroundColor: '#DBF9FF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 35,
+    paddingHorizontal: 28,
   },
+
+
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+
+  image: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+
+  logoImage: {
+    width: 120,
+    height: 50,
+  },
+
+
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+
+  /* USUARIO */
 
   userArea: {
     flexDirection: 'row',
     alignItems: 'center',
   },
 
+
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 25,
+    width: 38,
+    height: 38,
+    borderRadius: 20,
     backgroundColor: '#2864E8',
     justifyContent: 'center',
     alignItems: 'center',
   },
 
+
   avatarText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
   },
+
 
   userInfo: {
     marginLeft: 10,
   },
+
 
   userName: {
     fontSize: 13,
@@ -225,25 +563,23 @@ const styles = StyleSheet.create({
     color: '#293548',
   },
 
+
   userRole: {
     fontSize: 10,
     color: '#98A3B7',
     marginTop: 2,
   },
 
+
   arrow: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: '#718096',
+    marginLeft: 10,
   },
 
 
-  /* CONTENIDO */
+  /*  CONTENIDO  */
 
   content: {
     flex: 1,
-    paddingHorizontal: 38,
-    paddingTop: 25,
   },
 
 });

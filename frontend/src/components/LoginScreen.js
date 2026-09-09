@@ -1,17 +1,26 @@
 import React, { useState } from 'react';
+
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView
+  useWindowDimensions,
 } from 'react-native';
+
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen({ navigation }) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+
+  const { width } = useWindowDimensions();
+
+  const isMobile = width < 600;
 
   const iniciarSesion = () => {
 
@@ -20,8 +29,10 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
-    // Usuario y contraseña de prueba
-    if (email === 'prueba@gmail.com' && password === '123456') {
+    if (
+      email === 'prueba@gmail.com' &&
+      password === '123456'
+    ) {
       navigation.navigate('StudentDashboard');
     } else {
       alert('Correo o contraseña incorrectos');
@@ -31,71 +42,174 @@ export default function LoginScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
 
-      <Text style={styles.title}>Colegio</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Correo electrónico"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-      />
-
-      <TextInput
-        style={styles.input}
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={iniciarSesion}
+      <View
+        style={[
+          styles.loginBox,
+          {
+            width: isMobile
+              ? '90%'
+              : 400,
+          },
+        ]}
       >
-        <Text style={styles.buttonText}>
-          Iniciar sesión
+
+        <Text style={styles.title}>
+          Colegio
         </Text>
-      </TouchableOpacity>
+
+
+        {/* CORREO */}
+
+        <TextInput
+          style={styles.input}
+          placeholder="Correo electrónico"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+
+
+        {/* CONTRASEÑA */}
+
+        <View style={styles.passwordContainer}>
+
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Contraseña"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!mostrarPassword}
+            autoCapitalize="none"
+          />
+
+          <TouchableOpacity
+            style={styles.eyeButton}
+            onPress={() =>
+              setMostrarPassword(!mostrarPassword)
+            }
+          >
+
+            <Ionicons
+              name={
+                mostrarPassword
+                  ? 'eye-outline'
+                  : 'eye-off-outline'
+              }
+              size={21}
+              color="#718096"
+            />
+
+          </TouchableOpacity>
+
+        </View>
+
+
+        {/* BOTÓN */}
+
+        <TouchableOpacity
+          style={styles.button}
+          onPress={iniciarSesion}
+        >
+
+          <Text style={styles.buttonText}>
+            Iniciar sesión
+          </Text>
+
+        </TouchableOpacity>
+
+      </View>
 
     </SafeAreaView>
   );
 }
 
+
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    backgroundColor: '#F5F7FB',
   },
+
+
+  loginBox: {
+    alignItems: 'stretch',
+  },
+
 
   title: {
     fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 30,
+    color: '#263244',
   },
 
+
   input: {
+    width: '100%',
+    height: 48,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#D9DEE8',
     borderRadius: 10,
-    padding: 12,
-    paddingRight: 100,
+    paddingHorizontal: 12,
+    marginBottom: 15,
+    backgroundColor: '#FFFFFF',
+  },
+
+
+  /* CONTRASEÑA */
+
+  passwordContainer: {
+    width: '100%',
+    height: 48,
+    position: 'relative',
     marginBottom: 15,
   },
 
-  button: {
-    backgroundColor: '#2563EB',
-    padding: 15,
+
+  passwordInput: {
+    width: '100%',
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#D9DEE8',
     borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingRight: 45,
+    backgroundColor: '#FFFFFF',
+  },
+
+
+  eyeButton: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: 45,
+    height: 48,
+    justifyContent: 'center',
     alignItems: 'center',
   },
 
+
+  /* BOTÓN */
+
+  button: {
+    width: '100%',
+    height: 48,
+    backgroundColor: '#2563EB',
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
+
 });

@@ -4,6 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './src/components/LoginScreen';
 import StudentDashboard from './src/components/StudentDashboard';
 
+import CursoStudent from './src/pages/CursosStudent';
+
 const Stack = createNativeStackNavigator();
 
 const linking = {
@@ -11,7 +13,8 @@ const linking = {
   config: {
     screens: {
       Login: '/',
-      StudentDashboard: '/StudentDashboard',
+      StudentDashboard: '/StudentDashboard/inicio',
+      CursosStudent: '/StudentDashboard/cursostudent',
     },
   },
 };
@@ -26,6 +29,13 @@ function App() {
 
         {/* PANEL DEL ESTUDIANTE */}
         <Stack.Screen  name="StudentDashboard"  component={StudentDashboard} />
+        <Stack.Screen  name="CursosStudent">
+          {() => (
+            <StudentDashboard>
+              <CursoStudent />
+            </StudentDashboard>
+          )}
+        </Stack.Screen>
 
         {/* PANEL DEL PROFESOR */}
 
