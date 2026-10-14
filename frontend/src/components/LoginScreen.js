@@ -35,7 +35,7 @@ export default function LoginScreen({ navigation }) {
       const rutas = {
         teacher: 'TeacherDashboard',
         student: 'StudentDashboard',
-        admin: 'AdminDashboard',
+        admin: 'Admin',
       };
 
       const ruta = rutas[resultado.rol];

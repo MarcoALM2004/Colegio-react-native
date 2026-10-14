@@ -14,6 +14,8 @@ import CalendarioTeacher from "./src/pages/CalendarioTeacher";
 import MensajesTeacher from "./src/pages/MensajesTeacher";
 import ConfiguracionTeacher from './src/pages/ConfiguracionTeacher';
 
+import AdminNavigator, { adminLinking } from './src/navigation/AdminNavigator';
+
 const Stack = createNativeStackNavigator();
 
 const linking = {
@@ -32,6 +34,8 @@ const linking = {
       CalendarioTeacher:'/TeacherDashboard/calendarioTeacher',
       MensajesTeacher:'/TeacherDashboard/mensajesTeacher',
       ConfiguracionTeacher:'/TeacherDashboard/configuracionTeacher',
+
+      Admin: adminLinking,
     }
   },
 };
@@ -105,9 +109,10 @@ function App() {
             </TeacherDashboard>
           )}
         </Stack.Screen>
-        
 
-        {/* PANEL DEL ADMIN */}
+
+        {/* PANEL DEL ADMIN (sus pantallas están en src/navigation/AdminNavigator.js) */}
+        <Stack.Screen name="Admin" component={AdminNavigator} />
 
       </Stack.Navigator>
     </NavigationContainer>
