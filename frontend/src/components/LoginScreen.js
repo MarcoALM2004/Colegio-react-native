@@ -1,231 +1,303 @@
+
 import React, { useState } from 'react';
-
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  useWindowDimensions,
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  useWindowDimensions, KeyboardAvoidingView, ScrollView,
+  Platform, ActivityIndicator, Image,
 } from 'react-native';
-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { login } from '../service/authService';
+import logoLogin from '../assets/logo-login.jpg';
 
 export default function LoginScreen({ navigation }) {
-
-  const [email, setEmail] = useState('');
+  const [usuario, setUsuario] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState('');
 
   const { width } = useWindowDimensions();
-
   const isMobile = width < 600;
 
   const iniciarSesion = async () => {
-
-    if (!email || !password) {
-      alert('Completa todos los campos');
+    if (!usuario.trim() || !password) {
+      setError('Ingresa tu usuario y contraseña.');
       return;
     }
 
+    setCargando(true);
+    setError('');
+
     try {
+      const resultado = await login(usuario, password);
 
-      const response = await fetch('http://localhost:8080/login' || 'http://10.0.2.2:8080/login',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: `email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
-        }
-      );
+      const rutas = {
+        teacher: 'TeacherDashboard',
+        student: 'StudentDashboard',
+        admin: 'AdminDashboard',
+      };
 
-      const resultado = await response.text();
+      const ruta = rutas[resultado.rol];
 
-      if (resultado === 'Inicio de sesión correcto') {
-        navigation.navigate('StudentDashboard');
-      } else {
-        alert('Correo o contraseña incorrectos');
+      if (!ruta) {
+        setError('No se reconoce el tipo de usuario.');
+        return;
       }
 
-    } catch (error) {
-      alert('No se pudo conectar con el servidor y no se el por que :v');
-      console.log(error);
+      navigation.navigate(ruta);
+    } catch (err) {
+      setError(err.message || 'No se pudo iniciar sesión.');
+    } finally {
+      setCargando(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-
-      <View
-        style={[
-          styles.loginBox,
-          {
-            width: isMobile
-              ? '90%'
-              : 400,
-          },
-        ]}
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-
-        <Text style={styles.title}>
-          Iniciar secion
-        </Text>
-
-
-        {/* CORREO */}
-
-        <TextInput
-          style={styles.input}
-          placeholder="Correo electrónico"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-
-
-        {/* CONTRASEÑA */}
-
-        <View style={styles.passwordContainer}>
-
-          <TextInput
-            style={styles.passwordInput}
-            placeholder="Contraseña"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!mostrarPassword}
-            autoCapitalize="none"
-          />
-
-          <TouchableOpacity
-            style={styles.eyeButton}
-            onPress={() =>
-              setMostrarPassword(!mostrarPassword)
-            }
-          >
-
-            <Ionicons
-              name={
-                mostrarPassword
-                  ? 'eye-outline'
-                  : 'eye-off-outline'
-              }
-              size={21}
-              color="#718096"
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={[styles.card, { width: isMobile ? '92%' : 420 }]}>
+            <Image
+              source={logoLogin}
+              style={styles.logo}
+              resizeMode="contain"
+              accessibilityLabel="Logo de EduConnect"
             />
 
-          </TouchableOpacity>
+            <Text style={styles.brand}>EduConnect</Text>
+            <Text style={styles.subtitle}>Colegio Salcantay</Text>
 
-        </View>
+            <View style={styles.headingContainer}>
+              <Text style={styles.title}>¡Bienvenido de nuevo!</Text>
+              <Text style={styles.description}>
+                Ingresa tus credenciales para continuar.
+              </Text>
+            </View>
 
+            <Text style={styles.label}>Usuario</Text>
 
-        {/* BOTÓN */}
+            <View style={styles.inputContainer}>
+              <Ionicons name="person-outline" size={20} color="#7B8798" />
+              <TextInput
+                style={styles.input}
+                placeholder="Ej. C232 o E223"
+                placeholderTextColor="#9CA7B7"
+                value={usuario}
+                onChangeText={(value) => {
+                  setUsuario(value);
+                  setError('');
+                }}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                editable={!cargando}
+                returnKeyType="next"
+              />
+            </View>
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={iniciarSesion}
-        >
+            <Text style={styles.label}>Contraseña</Text>
 
-          <Text style={styles.buttonText}>
-            Iniciar sesión
+            <View style={styles.inputContainer}>
+              <Ionicons name="lock-closed-outline" size={20} color="#7B8798" />
+              <TextInput
+                style={styles.input}
+                placeholder="Ingresa tu contraseña"
+                placeholderTextColor="#9CA7B7"
+                value={password}
+                onChangeText={(value) => {
+                  setPassword(value);
+                  setError('');
+                }}
+                secureTextEntry={!mostrarPassword}
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!cargando}
+                returnKeyType="done"
+                onSubmitEditing={iniciarSesion}
+              />
+
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setMostrarPassword(!mostrarPassword)}
+                disabled={cargando}
+              >
+                <Ionicons
+                  name={mostrarPassword ? 'eye-outline' : 'eye-off-outline'}
+                  size={21}
+                  color="#7B8798"
+                />
+              </TouchableOpacity>
+            </View>
+
+            {!!error && (
+              <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle-outline" size={19} color="#DC2626" />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.button, cargando && styles.buttonDisabled]}
+              onPress={iniciarSesion}
+              disabled={cargando}
+              activeOpacity={0.85}
+            >
+              {cargando ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <>
+                  <Text style={styles.buttonText}>Iniciar sesión</Text>
+                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                </>
+              )}
+            </TouchableOpacity>
+
+          </View>
+
+          <Text style={styles.copyright}>
+            EduConnect · Plataforma educativa
           </Text>
-
-        </TouchableOpacity>
-
-      </View>
-
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-
 const styles = StyleSheet.create({
-
   container: {
     flex: 1,
+    backgroundColor: '#F1F5FB',
+  },
+  keyboard: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F7FB',
+    paddingVertical: 30,
   },
-
-
-  loginBox: {
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingHorizontal: 28,
+    paddingVertical: 30,
     alignItems: 'stretch',
+    borderWidth: 1,
+    borderColor: '#E8EDF5',
+    elevation: 5,
+    shadowColor: '#19345C',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
   },
-
-
-  title: {
-    fontSize: 30,
-    fontWeight: 'bold',
+  logo: {
+    width: 100,
+    height: 90,
+    alignSelf: 'center',
+    marginBottom: 10,
+  },
+  brand: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#1E3A66',
     textAlign: 'center',
-    marginBottom: 30,
-    color: '#263244',
+    letterSpacing: 0.3,
   },
-
-
+  subtitle: {
+    color: '#7B8798',
+    textAlign: 'center',
+    fontSize: 12,
+    marginTop: 5,
+  },
+  headingContainer: {
+    marginTop: 28,
+    marginBottom: 24,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#202D42',
+    marginBottom: 8,
+  },
+  description: {
+    fontSize: 14,
+    color: '#7B8798',
+    lineHeight: 21,
+  },
+  label: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#344258',
+    marginBottom: 9,
+  },
+  inputContainer: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DFE6F0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    marginBottom: 19,
+    backgroundColor: '#FBFCFE',
+  },
   input: {
-    width: '100%',
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#D9DEE8',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    marginBottom: 15,
-    backgroundColor: '#FFFFFF',
+    flex: 1,
+    minWidth: 0,
+    height: 50,
+    marginLeft: 10,
+    color: '#263244',
+    fontSize: 14,
   },
-
-
-  /* CONTRASEÑA */
-
-  passwordContainer: {
-    width: '100%',
-    height: 48,
-    position: 'relative',
-    marginBottom: 15,
-  },
-
-
-  passwordInput: {
-    width: '100%',
-    height: 48,
-    borderWidth: 1,
-    borderColor: '#D9DEE8',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingRight: 45,
-    backgroundColor: '#FFFFFF',
-  },
-
-
   eyeButton: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    width: 45,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 5,
+    marginLeft: 4,
   },
-
-
-  /* BOTÓN */
-
-  button: {
-    width: '100%',
-    height: 48,
-    backgroundColor: '#2563EB',
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FEF2F2',
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 11,
+    marginBottom: 16,
+    gap: 8,
   },
-
-
+  errorText: {
+    flex: 1,
+    color: '#B91C1C',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  button: {
+    minHeight: 52,
+    backgroundColor: '#2563EB',
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 5,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '700',
   },
 
+  copyright: {
+    marginTop: 22,
+    fontSize: 11,
+    color: '#8A96A8',
+    textAlign: 'center',
+  },
 });
