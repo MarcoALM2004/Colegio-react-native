@@ -1,766 +1,771 @@
+import React, { useMemo, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import React, { useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Platform,
-  useWindowDimensions,
-} from "react-native";
+  BottomSheet,
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  PageScroll,
+  PageTitle,
+  confirmAction,
+} from '../components/admin/AdminUI';
 
-const initialEvents = [
+import { colors, toneList, tones } from '../theme/adminTheme';
+import { DIAS_CORTOS, MESES, toISODate } from '../utils/adminHelpers';
+
+const VISTAS = ['Día', 'Semana', 'Mes'];
+const TIPOS = ['Entrega', 'Evaluación', 'Actividad'];
+
+const EVENTOS_INICIALES = [
   {
-    id: "1",
-    title: "Entrega del proyecto final",
-    date: "2026-10-15",
-    time: "10:00",
-    course: "Computación - 5° A",
-    type: "Entrega",
+    id: '1',
+    title: 'Entrega del proyecto final',
+    date: '2026-10-15',
+    time: '10:00',
+    course: 'Computación - 5° A',
+    type: 'Entrega',
+    tone: 'blue',
   },
   {
-    id: "2",
-    title: "Evaluación práctica",
-    date: "2026-10-18",
-    time: "09:00",
-    course: "Computación - 4° A",
-    type: "Evaluación",
+    id: '2',
+    title: 'Evaluación práctica',
+    date: '2026-10-18',
+    time: '09:00',
+    course: 'Computación - 4° A',
+    type: 'Evaluación',
+    tone: 'amber',
   },
   {
-    id: "3",
-    title: "Revisión de trabajos",
-    date: "2026-10-20",
-    time: "11:30",
-    course: "Computación - 5° B",
-    type: "Actividad",
+    id: '3',
+    title: 'Revisión de trabajos',
+    date: '2026-10-20',
+    time: '11:30',
+    course: 'Computación - 5° B',
+    type: 'Actividad',
+    tone: 'green',
   },
   {
-    id: "4",
-    title: "Exposición grupal",
-    date: "2026-10-23",
-    time: "08:30",
-    course: "Computación - 4° B",
-    type: "Evaluación",
+    id: '4',
+    title: 'Exposición grupal',
+    date: '2026-10-23',
+    time: '08:30',
+    course: 'Computación - 4° B',
+    type: 'Evaluación',
+    tone: 'purple',
   },
 ];
 
-const typeColors = {
-  Entrega: { bg: "#DBEAFE", text: "#1D4ED8" },
-  Evaluación: { bg: "#FEF3C7", text: "#92400E" },
-  Actividad: { bg: "#D1FAE5", text: "#047857" },
+const sumarDias = (fecha, cantidad) => {
+  const nueva = new Date(fecha);
+  nueva.setDate(nueva.getDate() + cantidad);
+  return nueva;
 };
 
-const pad = (number) => String(number).padStart(2, "0");
+const inicioSemana = (fecha) =>
+  sumarDias(fecha, -((fecha.getDay() + 6) % 7));
 
-const formatDate = (date) => {
-  const [year, month, day] = date.split("-");
-  return `${day}/${month}/${year}`;
-};
+const capitalizar = (texto) =>
+  texto.charAt(0).toUpperCase() + texto.slice(1);
+
+const obtenerTono = (evento) =>
+  evento.tone ||
+  ({
+    Entrega: 'blue',
+    Evaluación: 'amber',
+    Actividad: 'green',
+  }[evento.type] || 'blue');
+
+const crearFormulario = (fecha, curso = '') => ({
+  title: '',
+  date: fecha,
+  time: '09:00',
+  course: curso,
+  type: 'Actividad',
+  tone: 'green',
+});
 
 export default function CalendarioTeacher() {
-  const { width } = useWindowDimensions();
-  const isMobile = width < 700;
-
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth());
-  const [events, setEvents] = useState(initialEvents);
-  const [selectedDate, setSelectedDate] = useState(
-    `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`
-  );
-  const [showForm, setShowForm] = useState(false);
+  const [events, setEvents] = useState(EVENTOS_INICIALES);
+  const [vista, setVista] = useState('Semana');
+  const [fecha, setFecha] = useState(() => new Date());
+  const [form, setForm] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [menuId, setMenuId] = useState(null);
 
-  const [title, setTitle] = useState("");
-  const [eventDate, setEventDate] = useState("");
-  const [time, setTime] = useState("09:00");
-  const [course, setCourse] = useState("");
-  const [type, setType] = useState("Actividad");
+  const fechaISO = toISODate(fecha);
+  const hoyISO = toISODate(new Date());
 
-  const courses = useMemo(
-    () => [...new Set(events.map((event) => event.course).filter(Boolean))],
+  const eventosPorFecha = useMemo(() => {
+    const mapa = {};
+
+    events.forEach((evento) => {
+      (mapa[evento.date] ||= []).push(evento);
+    });
+
+    Object.values(mapa).forEach((lista) =>
+      lista.sort((a, b) => a.time.localeCompare(b.time))
+    );
+
+    return mapa;
+  }, [events]);
+
+  const eventosDelDia = eventosPorFecha[fechaISO] || [];
+
+  const cursos = useMemo(
+    () => [...new Set(events.map((e) => e.course).filter(Boolean))],
     [events]
   );
 
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
+  const semana = Array.from({ length: 7 }, (_, i) =>
+    sumarDias(inicioSemana(fecha), i)
+  );
 
-  const monthName = new Date(year, month, 1).toLocaleDateString("es-PE", {
-    month: "long",
-    year: "numeric",
-  });
+  const primeroMes = new Date(fecha.getFullYear(), fecha.getMonth(), 1);
+  const celdas = Array.from({ length: 42 }, (_, i) =>
+    sumarDias(inicioSemana(primeroMes), i)
+  );
+  const celdasMes =
+    celdas[35].getMonth() !== fecha.getMonth()
+      ? celdas.slice(0, 35)
+      : celdas;
 
-  const selectedEvents = events
-    .filter((event) => event.date === selectedDate)
-    .sort((a, b) => a.time.localeCompare(b.time));
+  const tituloPeriodo =
+    vista === 'Día'
+      ? `${DIAS_CORTOS[fecha.getDay()]} ${fecha.getDate()} de ${MESES[fecha.getMonth()]}`
+      : `${capitalizar(MESES[fecha.getMonth()])} ${fecha.getFullYear()}`;
 
-  const changeMonth = (direction) => {
-    const next = new Date(year, month + direction, 1);
-    setYear(next.getFullYear());
-    setMonth(next.getMonth());
+  const mover = (direccion) => {
+    if (vista === 'Día') {
+      setFecha((actual) => sumarDias(actual, direccion));
+    } else if (vista === 'Semana') {
+      setFecha((actual) => sumarDias(actual, direccion * 7));
+    } else {
+      setFecha(
+        (actual) =>
+          new Date(
+            actual.getFullYear(),
+            actual.getMonth() + direccion,
+            1
+          )
+      );
+    }
   };
 
-  const openNewEvent = () => {
+  const abrirNuevo = () => {
     setEditingId(null);
-    setTitle("");
-    setEventDate(selectedDate);
-    setTime("09:00");
-    setCourse(courses[0] || "");
-    setType("Actividad");
-    setShowForm(true);
+    setForm(crearFormulario(fechaISO, cursos[0] || ''));
   };
 
-  const openEditEvent = (event) => {
-    setEditingId(event.id);
-    setTitle(event.title);
-    setEventDate(event.date);
-    setTime(event.time);
-    setCourse(event.course);
-    setType(event.type);
-    setMenuId(null);
-    setShowForm(true);
+  const abrirEditar = (evento) => {
+    setEditingId(evento.id);
+    setForm({ ...evento, tone: obtenerTono(evento) });
   };
 
-  const saveEvent = () => {
-    if (!title.trim() || !eventDate.trim()) {
-      Alert.alert("Datos incompletos", "Ingresa el título y la fecha.");
+  const actualizarForm = (campo, valor) =>
+    setForm((actual) => ({ ...actual, [campo]: valor }));
+
+  const guardar = () => {
+    if (
+      !form?.title.trim() ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(form.date) ||
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(form.time)
+    ) {
       return;
     }
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(eventDate)) {
-      Alert.alert("Fecha inválida", "Usa el formato AAAA-MM-DD.");
-      return;
-    }
+    const [anio, mes, dia] = form.date.split('-').map(Number);
+    const fechaValidada = new Date(anio, mes - 1, dia);
 
-    const eventData = {
-      title: title.trim(),
-      date: eventDate,
-      time: time || "09:00",
-      course: course.trim() || "General",
-      type,
+    if (toISODate(fechaValidada) !== form.date) return;
+
+    const evento = {
+      ...form,
+      title: form.title.trim(),
+      course: form.course.trim() || 'General',
     };
 
-    if (editingId) {
-      setEvents((current) =>
-        current.map((event) =>
-          event.id === editingId ? { ...event, ...eventData } : event
-        )
-      );
-    } else {
-      setEvents((current) => [
-        ...current,
-        { id: Date.now().toString(), ...eventData },
-      ]);
-    }
+    setEvents((actuales) =>
+      editingId
+        ? actuales.map((e) =>
+            e.id === editingId ? { ...e, ...evento } : e
+          )
+        : [...actuales, { ...evento, id: Date.now().toString() }]
+    );
 
-    setSelectedDate(eventDate);
-    const [newYear, newMonth] = eventDate.split("-").map(Number);
-    setYear(newYear);
-    setMonth(newMonth - 1);
-    setShowForm(false);
+    setFecha(fechaValidada);
+    setForm(null);
+    setEditingId(null);
   };
 
-  const deleteEvent = (id) => {
-    const remove = () => {
-      setEvents((current) =>
-        current.filter((event) => event.id !== id)
-      );
-      setMenuId(null);
-    };
+  const eliminar = (evento) =>
+    confirmAction(
+      'Eliminar evento',
+      `¿Eliminar "${evento.title}"?`,
+      () =>
+        setEvents((actuales) =>
+          actuales.filter((e) => e.id !== evento.id)
+        ),
+      'Eliminar'
+    );
 
-    if (Platform.OS === "web") {
-      if (globalThis.confirm("¿Eliminar este evento?")) remove();
-    } else {
-      Alert.alert("Eliminar evento", "¿Deseas eliminar este evento?", [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Eliminar", style: "destructive", onPress: remove },
-      ]);
-    }
+  const renderDia = (dia) => {
+    const iso = toISODate(dia);
+    const activo = iso === fechaISO;
+
+    return (
+      <TouchableOpacity
+        key={iso}
+        style={[styles.day, activo && styles.dayActive]}
+        onPress={() => setFecha(dia)}
+      >
+        <Text style={[styles.dayName, activo && styles.white]}>
+          {DIAS_CORTOS[dia.getDay()]}
+        </Text>
+        <Text
+          style={[
+            styles.dayNumber,
+            iso === hoyISO && styles.today,
+            activo && styles.white,
+          ]}
+        >
+          {dia.getDate()}
+        </Text>
+        {!!eventosPorFecha[iso] && (
+          <View style={[styles.dot, activo && styles.dotWhite]} />
+        )}
+      </TouchableOpacity>
+    );
   };
 
   return (
-    <ScrollView style={styles.screen}>
-      <View style={[styles.container, isMobile && styles.mobileContainer]}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.heading}>Calendario</Text>
-            <Text style={styles.subtitle}>
-              Organiza tus clases, evaluaciones y entregas.
-            </Text>
-          </View>
+    <>
+      <PageScroll>
+        <PageTitle
+          title="Calendario"
+          actionLabel="Nuevo evento"
+          onAction={abrirNuevo}
+        />
 
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={openNewEvent}
-          >
-            <Text style={styles.primaryButtonText}>＋ Nuevo evento</Text>
-          </TouchableOpacity>
+        <View style={styles.segment}>
+          {VISTAS.map((item) => (
+            <TouchableOpacity
+              key={item}
+              style={[
+                styles.segmentItem,
+                vista === item && styles.segmentActive,
+              ]}
+              onPress={() => setVista(item)}
+            >
+              <Text
+                style={[
+                  styles.segmentText,
+                  vista === item && styles.segmentTextActive,
+                ]}
+              >
+                {item}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <View style={styles.calendarCard}>
-          <View style={styles.monthHeader}>
+        <Card>
+          <View style={styles.periodRow}>
             <TouchableOpacity
-              style={styles.monthButton}
-              onPress={() => changeMonth(-1)}
+              style={styles.arrow}
+              onPress={() => mover(-1)}
             >
-              <Text style={styles.monthButtonText}>‹</Text>
+              <Ionicons
+                name="chevron-back"
+                size={20}
+                color={colors.textStrong}
+              />
             </TouchableOpacity>
 
-            <Text style={styles.monthTitle}>
-              {monthName.charAt(0).toUpperCase() + monthName.slice(1)}
-            </Text>
+            <TouchableOpacity onPress={() => setFecha(new Date())}>
+              <Text style={styles.period}>{tituloPeriodo}</Text>
+              <Text style={styles.todayLink}>Volver a hoy</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.monthButton}
-              onPress={() => changeMonth(1)}
+              style={styles.arrow}
+              onPress={() => mover(1)}
             >
-              <Text style={styles.monthButtonText}>›</Text>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={colors.textStrong}
+              />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.weekRow}>
-            {["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"].map(
-              (day) => (
-                <Text key={day} style={styles.weekDay}>
-                  {day}
-                </Text>
-              )
-            )}
-          </View>
+          {vista === 'Día' && (
+            <View style={styles.dayPreview}>
+              <Ionicons
+                name="calendar-outline"
+                size={25}
+                color={colors.primary}
+              />
+              <Text style={styles.dayTitle}>
+                {eventosDelDia.length} evento
+                {eventosDelDia.length === 1 ? '' : 's'} programado
+                {eventosDelDia.length === 1 ? '' : 's'}
+              </Text>
+            </View>
+          )}
 
-          <View style={styles.daysGrid}>
-            {Array.from({ length: firstDay }, (_, index) => (
-              <View key={`empty-${index}`} style={styles.dayCell} />
-            ))}
+          {vista === 'Semana' && (
+            <View style={styles.weekRow}>
+              {semana.map(renderDia)}
+            </View>
+          )}
 
-            {Array.from({ length: daysInMonth }, (_, index) => {
-              const day = index + 1;
-              const dateKey = `${year}-${pad(month + 1)}-${pad(day)}`;
-              const hasEvent = events.some(
-                (event) => event.date === dateKey
-              );
-              const selected = selectedDate === dateKey;
-              const isToday =
-                today.getFullYear() === year &&
-                today.getMonth() === month &&
-                today.getDate() === day;
-
-              return (
-                <TouchableOpacity
-                  key={dateKey}
-                  style={[
-                    styles.dayCell,
-                    selected && styles.selectedDay,
-                    isToday && !selected && styles.todayCell,
-                  ]}
-                  onPress={() => setSelectedDate(dateKey)}
-                >
-                  <Text
-                    style={[
-                      styles.dayNumber,
-                      selected && styles.selectedDayText,
-                    ]}
-                  >
-                    {day}
+          {vista === 'Mes' && (
+            <View style={styles.monthGrid}>
+              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(
+                (dia) => (
+                  <Text style={styles.monthHead} key={dia}>
+                    {dia}
                   </Text>
+                )
+              )}
 
-                  {hasEvent && (
-                    <View
-                      style={[
-                        styles.eventDot,
-                        selected && styles.selectedEventDot,
-                      ]}
-                    />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        <View style={styles.eventsSection}>
-          <View style={styles.eventsHeader}>
-            <View>
-              <Text style={styles.sectionTitle}>Eventos del día</Text>
-              <Text style={styles.sectionSubtitle}>
-                {formatDate(selectedDate)}
-              </Text>
-            </View>
-          </View>
-
-          {selectedEvents.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Sin eventos</Text>
-              <Text style={styles.emptyText}>
-                No hay actividades programadas para este día.
-              </Text>
-            </View>
-          ) : (
-            <View style={styles.eventList}>
-              {selectedEvents.map((event) => {
-                const colors = typeColors[event.type] || typeColors.Actividad;
+              {celdasMes.map((dia) => {
+                const iso = toISODate(dia);
+                const activo = iso === fechaISO;
+                const fuera = dia.getMonth() !== fecha.getMonth();
 
                 return (
-                  <View key={event.id} style={styles.eventCard}>
-                    <View style={styles.eventTime}>
-                      <Text style={styles.eventTimeText}>
-                        {event.time}
+                  <TouchableOpacity
+                    key={iso}
+                    style={styles.monthCell}
+                    onPress={() => setFecha(dia)}
+                  >
+                    <View
+                      style={[
+                        styles.monthNumBox,
+                        activo && styles.monthNumActive,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.monthNum,
+                          fuera && styles.muted,
+                          iso === hoyISO && styles.today,
+                          activo && styles.white,
+                        ]}
+                      >
+                        {dia.getDate()}
                       </Text>
                     </View>
 
-                    <View style={styles.eventContent}>
-                      <Text style={styles.eventTitle}>{event.title}</Text>
-                      <Text style={styles.eventCourse}>
-                        {event.course || "General"}
-                      </Text>
-                      <View style={styles.eventFooter}>
-                        <Text
-                          style={[
-                            styles.eventBadge,
-                            {
-                              backgroundColor: colors.bg,
-                              color: colors.text,
-                            },
-                          ]}
-                        >
-                          {event.type}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.eventActions}>
-                      <TouchableOpacity
-                        onPress={() => openEditEvent(event)}
-                        style={styles.iconButton}
-                      >
-                        <Text style={styles.actionIcon}>✎</Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() =>
-                          setMenuId(menuId === event.id ? null : event.id)
-                        }
-                        style={styles.iconButton}
-                      >
-                        <Text style={styles.actionIcon}>⋮</Text>
-                      </TouchableOpacity>
-
-                      {menuId === event.id && (
-                        <View style={styles.actionMenu}>
-                          <TouchableOpacity
-                            style={styles.actionItem}
-                            onPress={() => openEditEvent(event)}
-                          >
-                            <Text style={styles.actionText}>Editar</Text>
-                          </TouchableOpacity>
-
-                          <TouchableOpacity
-                            style={styles.actionItem}
-                            onPress={() => deleteEvent(event.id)}
-                          >
-                            <Text style={styles.deleteText}>Eliminar</Text>
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
-                  </View>
+                    {!!eventosPorFecha[iso] && (
+                      <View
+                        style={[
+                          styles.dot,
+                          activo && styles.dotWhite,
+                        ]}
+                      />
+                    )}
+                  </TouchableOpacity>
                 );
               })}
             </View>
           )}
-        </View>
+        </Card>
 
-        {showForm && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.formCard}>
-              <Text style={styles.formTitle}>
-                {editingId ? "Editar evento" : "Nuevo evento"}
-              </Text>
+        <Text style={styles.sectionTitle}>
+          Eventos del día · {eventosDelDia.length}
+        </Text>
 
-              <Text style={styles.inputLabel}>Título</Text>
-              <input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                placeholder="Nombre del evento"
-                style={styles.input}
-              />
+        {eventosDelDia.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon="calendar-outline"
+              text="Sin eventos para este día."
+            />
+          </Card>
+        ) : (
+          eventosDelDia.map((evento) => {
+            const tono = tones[obtenerTono(evento)] || tones.blue;
 
-              <Text style={styles.inputLabel}>Fecha (AAAA-MM-DD)</Text>
-              <input
-                value={eventDate}
-                onChange={(event) => setEventDate(event.target.value)}
-                placeholder="2026-10-20"
-                style={styles.input}
-              />
+            return (
+              <View key={evento.id} style={styles.eventRow}>
+                <Text style={styles.eventHour}>{evento.time}</Text>
 
-              <Text style={styles.inputLabel}>Hora</Text>
-              <input
-                type="time"
-                value={time}
-                onChange={(event) => setTime(event.target.value)}
-                style={styles.input}
-              />
-
-              <Text style={styles.inputLabel}>Curso</Text>
-              <select
-                value={course}
-                onChange={(event) => setCourse(event.target.value)}
-                style={styles.input}
-              >
-                <option value="">General</option>
-                {courses.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-
-              <Text style={styles.inputLabel}>Tipo de evento</Text>
-              <select
-                value={type}
-                onChange={(event) => setType(event.target.value)}
-                style={styles.input}
-              >
-                <option value="Actividad">Actividad</option>
-                <option value="Entrega">Entrega</option>
-                <option value="Evaluación">Evaluación</option>
-              </select>
-
-              <View style={styles.formActions}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => setShowForm(false)}
+                <View
+                  style={[
+                    styles.event,
+                    {
+                      backgroundColor: tono.soft,
+                      borderLeftColor: tono.solid,
+                    },
+                  ]}
                 >
-                  <Text style={styles.cancelText}>Cancelar</Text>
-                </TouchableOpacity>
+                  <View style={styles.flex}>
+                    <Text style={styles.eventTitle}>
+                      {evento.title}
+                    </Text>
+                    <Text style={styles.eventCourse}>
+                      {evento.course}
+                    </Text>
+                    <Text style={styles.eventType}>
+                      {evento.type}
+                    </Text>
+                  </View>
 
-                <TouchableOpacity
-                  style={styles.primaryButton}
-                  onPress={saveEvent}
-                >
-                  <Text style={styles.primaryButtonText}>Guardar</Text>
-                </TouchableOpacity>
+                  <View style={styles.actions}>
+                    <TouchableOpacity
+                      onPress={() => abrirEditar(evento)}
+                    >
+                      <Ionicons
+                        name="create-outline"
+                        size={19}
+                        color={colors.primary}
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => eliminar(evento)}
+                    >
+                      <Ionicons
+                        name="trash-outline"
+                        size={18}
+                        color={colors.danger || '#DC2626'}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
+            );
+          })
         )}
-      </View>
-    </ScrollView>
+      </PageScroll>
+
+      <BottomSheet
+        visible={!!form}
+        title={editingId ? 'Editar evento' : 'Nuevo evento'}
+        onClose={() => setForm(null)}
+      >
+        {form && (
+          <>
+            <Field
+              label="Título"
+              value={form.title}
+              onChangeText={(v) => actualizarForm('title', v)}
+              placeholder="Ej. Entrega del proyecto"
+            />
+
+            <View style={styles.formRow}>
+              <Field
+                style={styles.flex}
+                label="Fecha (AAAA-MM-DD)"
+                value={form.date}
+                onChangeText={(v) => actualizarForm('date', v)}
+                placeholder="2026-10-15"
+              />
+
+              <Field
+                style={styles.flex}
+                label="Hora (HH:MM)"
+                value={form.time}
+                onChangeText={(v) => actualizarForm('time', v)}
+                placeholder="09:00"
+              />
+            </View>
+
+            <Field
+              label="Curso y sección"
+              value={form.course}
+              onChangeText={(v) => actualizarForm('course', v)}
+              placeholder="Computación - 5° A"
+            />
+
+            <View style={styles.suggestions}>
+              {cursos.map((curso) => (
+                <TouchableOpacity
+                  key={curso}
+                  style={[
+                    styles.courseChip,
+                    form.course === curso && styles.courseChipActive,
+                  ]}
+                  onPress={() => actualizarForm('course', curso)}
+                >
+                  <Text
+                    style={[
+                      styles.courseText,
+                      form.course === curso && styles.courseTextActive,
+                    ]}
+                  >
+                    {curso}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.label}>Tipo de evento</Text>
+            <View style={styles.options}>
+              {TIPOS.map((tipo) => (
+                <TouchableOpacity
+                  key={tipo}
+                  style={[
+                    styles.typeOption,
+                    form.type === tipo && styles.typeOptionActive,
+                  ]}
+                  onPress={() => actualizarForm('type', tipo)}
+                >
+                  <Text
+                    style={[
+                      styles.typeText,
+                      form.type === tipo && styles.typeTextActive,
+                    ]}
+                  >
+                    {tipo}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.label}>Color</Text>
+            <View style={styles.colors}>
+              {toneList.map((tono) => (
+                <TouchableOpacity
+                  key={tono}
+                  onPress={() => actualizarForm('tone', tono)}
+                  style={[
+                    styles.color,
+                    { backgroundColor: tones[tono].solid },
+                    form.tone === tono && styles.colorActive,
+                  ]}
+                />
+              ))}
+            </View>
+
+            <Button
+              title={editingId ? 'Guardar cambios' : 'Guardar evento'}
+              icon="checkmark"
+              onPress={guardar}
+              disabled={
+                !form.title.trim() ||
+                !/^\d{4}-\d{2}-\d{2}$/.test(form.date) ||
+                !/^([01]\d|2[0-3]):[0-5]\d$/.test(form.time)
+              }
+            />
+          </>
+        )}
+      </BottomSheet>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  flex: { flex: 1, minWidth: 0 },
+  white: { color: '#FFFFFF' },
+  muted: { color: '#C3CAD6' },
+  today: { color: colors.primary, fontWeight: '800' },
+
+  segment: {
+    flexDirection: 'row',
+    backgroundColor: '#E9EEF6',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 14,
+  },
+  segmentItem: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    height: 36,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  container: {
-    flex: 1,
-    width: "100%",
-    minWidth: 0,
-    alignSelf: "stretch",
-    padding: 20,
+  segmentActive: { backgroundColor: colors.primary },
+  segmentText: { fontSize: 13, color: colors.textStrong },
+  segmentTextActive: { color: '#FFFFFF', fontWeight: '700' },
+
+  periodRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
   },
-  mobileContainer: {
-    padding: 12,
+  arrow: { padding: 8 },
+  period: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textStrong,
+    textAlign: 'center',
   },
-  header: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 20,
-  },
-  heading: {
-    fontSize: 25,
-    fontWeight: "700",
-    color: "#172554",
-  },
-  subtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    color: "#64748B",
-  },
-  primaryButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "#0866F5",
-    borderRadius: 7,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  calendarCard: {
-    width: "100%",
-    padding: 16,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-  },
-  monthHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 18,
-  },
-  monthTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#1E293B",
-    textTransform: "capitalize",
-  },
-  monthButton: {
-    width: 34,
-    height: 34,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 7,
-    backgroundColor: "#F1F5F9",
-  },
-  monthButtonText: {
-    fontSize: 24,
-    color: "#475569",
-    lineHeight: 28,
-  },
-  weekRow: {
-    flexDirection: "row",
-    marginBottom: 6,
-  },
-  weekDay: {
-    width: `${100 / 7}%`,
-    textAlign: "center",
+  todayLink: {
     fontSize: 11,
-    fontWeight: "600",
-    color: "#64748B",
+    color: colors.primary,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  weekRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 4,
+  },
+  day: {
+    flex: 1,
+    alignItems: 'center',
     paddingVertical: 8,
+    borderRadius: 12,
   },
-  daysGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  dayCell: {
-    width: `${100 / 7}%`,
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 8,
-    marginBottom: 3,
-  },
+  dayActive: { backgroundColor: colors.primary },
+  dayName: { fontSize: 10, color: colors.textMuted },
   dayNumber: {
-    fontSize: 13,
-    color: "#334155",
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.textStrong,
+    marginTop: 3,
   },
-  selectedDay: {
-    backgroundColor: "#0866F5",
-  },
-  selectedDayText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
-  todayCell: {
-    borderWidth: 1,
-    borderColor: "#0866F5",
-  },
-  eventDot: {
+  dot: {
     width: 5,
     height: 5,
     borderRadius: 3,
-    backgroundColor: "#0866F5",
-    marginTop: 3,
-  },
-  selectedEventDot: {
-    backgroundColor: "#FFFFFF",
-  },
-  eventsSection: {
-    marginTop: 24,
-  },
-  eventsHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#172554",
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: "#64748B",
+    backgroundColor: colors.primary,
     marginTop: 4,
   },
-  emptyState: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 9,
-    padding: 28,
+  dotWhite: { backgroundColor: '#FFFFFF' },
+
+  monthGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  monthHead: {
+    width: '14.28%',
+    textAlign: 'center',
+    fontSize: 11,
+    color: colors.textMuted,
+    marginBottom: 8,
   },
-  emptyTitle: {
+  monthCell: {
+    width: '14.28%',
+    alignItems: 'center',
+    height: 44,
+  },
+  monthNumBox: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  monthNumActive: { backgroundColor: colors.primary },
+  monthNum: { fontSize: 13, color: colors.textStrong },
+
+  dayPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+  },
+  dayTitle: {
     fontSize: 14,
-    fontWeight: "600",
-    color: "#334155",
+    fontWeight: '700',
+    color: colors.textStrong,
   },
-  emptyText: {
-    fontSize: 12,
-    color: "#64748B",
-    textAlign: "center",
-    marginTop: 5,
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textStrong,
+    marginTop: 6,
+    marginBottom: 12,
   },
-  eventList: {
+
+  eventRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    marginBottom: 10,
     gap: 10,
   },
-  eventCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    padding: 14,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 9,
-  },
-  eventTime: {
-    minWidth: 48,
-    paddingTop: 2,
-  },
-  eventTimeText: {
+  eventHour: {
+    width: 46,
     fontSize: 12,
-    fontWeight: "700",
-    color: "#2563EB",
+    color: colors.textMuted,
+    paddingTop: 12,
   },
-  eventContent: {
+  event: {
     flex: 1,
-    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderRadius: 10,
+    padding: 12,
+    gap: 10,
   },
   eventTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#1E293B",
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textStrong,
   },
   eventCourse: {
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  eventType: {
     fontSize: 11,
-    color: "#64748B",
-    marginTop: 5,
+    color: colors.textMuted,
+    marginTop: 4,
   },
-  eventFooter: {
-    flexDirection: "row",
-    marginTop: 9,
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  eventBadge: {
-    alignSelf: "flex-start",
-    borderRadius: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    fontSize: 10,
-    fontWeight: "600",
+
+  formRow: { flexDirection: 'row', gap: 10 },
+  suggestions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 14,
   },
-  eventActions: {
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconButton: {
-    padding: 5,
-  },
-  actionIcon: {
-    fontSize: 19,
-    color: "#64748B",
-  },
-  actionMenu: {
-    position: "absolute",
-    top: 32,
-    right: 0,
-    zIndex: 100,
-    elevation: 8,
-    minWidth: 105,
-    backgroundColor: "#FFFFFF",
+  courseChip: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 7,
-    paddingVertical: 4,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
   },
-  actionItem: {
+  courseChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: '#EEF2FF',
+  },
+  courseText: { fontSize: 11, color: colors.textMuted },
+  courseTextActive: { color: colors.primary, fontWeight: '700' },
+  label: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textStrong,
+    marginBottom: 8,
+  },
+  options: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  typeOption: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 9,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 9,
   },
-  actionText: {
-    fontSize: 12,
-    color: "#334155",
+  typeOptionActive: {
+    borderColor: colors.primary,
+    backgroundColor: '#EEF2FF',
   },
-  deleteText: {
-    fontSize: 12,
-    color: "#DC2626",
-  },
-  modalOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 200,
-    backgroundColor: "rgba(15,23,42,0.45)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 12,
-  },
-  formCard: {
-    width: "100%",
-    maxWidth: 450,
-    maxHeight: "95%",
-    overflow: "auto",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    padding: 20,
-  },
-  formTitle: {
-    fontSize: 19,
-    fontWeight: "700",
-    color: "#172554",
+  typeText: { fontSize: 12, color: colors.textMuted },
+  typeTextActive: { color: colors.primary, fontWeight: '700' },
+  colors: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
     marginBottom: 18,
   },
-  inputLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#475569",
-    marginBottom: 5,
-  },
-  input: {
-    width: "100%",
-    boxSizing: "border-box",
-    border: "1px solid #DCE3EC",
-    borderRadius: 7,
-    padding: 10,
-    marginBottom: 13,
-    backgroundColor: "#FFFFFF",
-    color: "#334155",
-    fontSize: 12,
-  },
-  formActions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 5,
-  },
-  cancelButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#DCE3EC",
-    borderRadius: 7,
-  },
-  cancelText: {
-    color: "#475569",
-    fontSize: 12,
-  },
+  color: { width: 30, height: 30, borderRadius: 15 },
+  colorActive: { borderWidth: 3, borderColor: colors.textStrong },
 });

@@ -2,8 +2,11 @@ import React from 'react';
 import {View,Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions} from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function InicioStudent() {
+
+  const navigation = useNavigation();
 
   const { width } = useWindowDimensions();
 
@@ -257,6 +260,7 @@ export default function InicioStudent() {
                   : 0,
               },
             ]}
+            onPress={() => navigation.navigate('CursosStudent')}
           >
             <Text style={styles.viewAll}>
               Ver todos
@@ -443,6 +447,7 @@ export default function InicioStudent() {
                   : 0,
               },
             ]}
+            onPress={() => navigation.navigate('TareasStudent')}
           >
             <Text style={styles.viewAll}>
               Ver todo

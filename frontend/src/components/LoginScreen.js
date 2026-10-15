@@ -30,28 +30,31 @@ export default function LoginScreen({ navigation }) {
     setError('');
 
     try {
-      const resultado = await login(usuario, password);
+      const resultadoLogin = await login(usuario, password);
 
-      const rutas = {
-        teacher: 'TeacherDashboard',
-        student: 'StudentDashboard',
-        admin: 'Admin',
-      };
+      const rolUsuario = resultadoLogin.rol.toUpperCase();
 
-      const ruta = rutas[resultado.rol];
-
-      if (!ruta) {
-        setError('No se reconoce el tipo de usuario.');
-        return;
+      if (rolUsuario === 'ADMIN' || rolUsuario === 'ADMINISTRADOR') {
+        navigation.replace('Admin');
+      } else if (rolUsuario === 'DOCENTE' || rolUsuario === 'TEACHER') {
+        navigation.replace('Teacher');
+      } else if (rolUsuario === 'ESTUDIANTE' || rolUsuario === 'STUDENT') {
+        navigation.replace('Student');
+      } else {
+        setError('El usuario no tiene un rol válido.');
       }
-
-      navigation.navigate(ruta);
     } catch (err) {
-      setError(err.message || 'No se pudo iniciar sesión.');
+      const mensaje = err.message || '';
+
+      setError(
+        mensaje.includes('Network request failed')
+          ? 'No se pudo conectar con el servidor.'
+          : mensaje || 'No se pudo iniciar sesión.'
+      );
     } finally {
       setCargando(false);
     }
-  };
+  }
 
   return (
     <SafeAreaView style={styles.container}>

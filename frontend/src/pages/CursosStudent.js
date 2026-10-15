@@ -2,8 +2,10 @@ import React from 'react';
 import {View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function CursoStudent() {
+  const navigation = useNavigation();
 
     const { width } = useWindowDimensions();
 
@@ -67,7 +69,7 @@ export default function CursoStudent() {
               Desarrolla tu pensamiento lógico y resuelve problemas.
             </Text>
 
-            <TouchableOpacity style={styles.courseButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('CursoDetalleStudent', { id: 'matematica' })} style={styles.courseButton}>
               <Text style={styles.courseButtonText}>
                 Ver curso
               </Text>
@@ -113,7 +115,7 @@ export default function CursoStudent() {
               Explora el mundo a través de la ciencia.
             </Text>
 
-            <TouchableOpacity style={styles.courseButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('CursoDetalleStudent', { id: 'ciencia' })} style={styles.courseButton}>
               <Text style={styles.courseButtonText}>
                 Ver curso
               </Text>
@@ -159,7 +161,7 @@ export default function CursoStudent() {
               Mejora tus habilidades de lectura, escritura y expresión.
             </Text>
 
-            <TouchableOpacity style={styles.courseButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('CursoDetalleStudent', { id: 'comunicacion' })} style={styles.courseButton}>
               <Text style={styles.courseButtonText}>
                 Ver curso
               </Text>
@@ -205,7 +207,7 @@ export default function CursoStudent() {
               Desarrolla tu creatividad y aprecia el arte.
             </Text>
 
-            <TouchableOpacity style={styles.courseButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('CursoDetalleStudent', { id: 'arte' })} style={styles.courseButton}>
               <Text style={styles.courseButtonText}>
                 Ver curso
               </Text>
@@ -251,7 +253,7 @@ export default function CursoStudent() {
               Cuida tu salud y desarrolla un estilo de vida activo.
             </Text>
 
-            <TouchableOpacity style={styles.courseButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('CursoDetalleStudent', { id: 'fisica' })} style={styles.courseButton}>
               <Text style={styles.courseButtonText}>
                 Ver curso
               </Text>
@@ -296,7 +298,7 @@ export default function CursoStudent() {
               Conoce tu entorno y participa en la sociedad.
             </Text>
 
-            <TouchableOpacity style={styles.courseButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('CursoDetalleStudent', { id: 'social' })} style={styles.courseButton}>
               <Text style={styles.courseButtonText}>
                 Ver curso
               </Text>
@@ -342,7 +344,7 @@ export default function CursoStudent() {
               Mejora tu comunicación en un mundo global.
             </Text>
 
-            <TouchableOpacity style={styles.courseButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('CursoDetalleStudent', { id: 'ingles' })} style={styles.courseButton}>
               <Text style={styles.courseButtonText}>
                 Ver curso
               </Text>
@@ -388,7 +390,7 @@ export default function CursoStudent() {
               Aprende y crea con la tecnología del futuro.
             </Text>
 
-            <TouchableOpacity style={styles.courseButton}>
+            <TouchableOpacity onPress={() => navigation.navigate('CursoDetalleStudent', { id: 'computacion' })} style={styles.courseButton}>
               <Text style={styles.courseButtonText}>
                 Ver curso
               </Text>

@@ -131,6 +131,7 @@ export default function TeacherDashboard({ children }) {
     },
   ];
 
+
   return (
     <View style={styles.container}>
       {/* MENÚ LATERAL: ESCRITORIO Y TABLET */}
@@ -255,23 +256,28 @@ export default function TeacherDashboard({ children }) {
               />
             </TouchableOpacity>
 
+            {/* PERFIL DEL DOCENTE */}
             <TouchableOpacity
               style={styles.userArea}
               activeOpacity={0.7}
-              accessibilityLabel="Perfil del docente"
+              accessibilityLabel="Abrir perfil del docente"
+              onPress={() => {
+                setMostrarMas(false);
+                navigation.navigate('PerfilTeacher');
+              }}
             >
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>A</Text>
               </View>
 
-              {!compactSidebar && (
+              {!isMobile && (
                 <View style={styles.userInfo}>
                   <Text style={styles.userName}>Ana Torres</Text>
                   <Text style={styles.userRole}>Docente</Text>
                 </View>
               )}
 
-              {!compactSidebar && (
+              {!isMobile && (
                 <Ionicons
                   name="chevron-down-outline"
                   size={16}
@@ -308,12 +314,23 @@ export default function TeacherDashboard({ children }) {
       {isMobile && (
         <>
           {mostrarMas && (
+            <TouchableOpacity
+              style={styles.overlay}
+              activeOpacity={1}
+              onPress={() => setMostrarMas(false)}
+            />
+          )}
+
+          {mostrarMas && (
             <View style={styles.moreMenu}>
               {extraItems.map((item) => (
                 <TouchableOpacity
                   key={item.label}
                   style={styles.moreItem}
-                  onPress={item.onPress}
+                  onPress={() => {
+                    setMostrarMas(false);
+                    item.onPress();
+                  }}
                   activeOpacity={0.7}
                 >
                   <Ionicons
@@ -357,6 +374,7 @@ export default function TeacherDashboard({ children }) {
                     styles.bottomLabel,
                     item.active && styles.bottomLabelActive,
                   ]}
+                  numberOfLines={1}
                 >
                   {item.label}
                 </Text>

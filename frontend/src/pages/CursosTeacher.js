@@ -9,8 +9,9 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
-const cursos = [
+export const cursos = [
   {
     id: 1,
     nombre: 'Matemáticas',
@@ -96,6 +97,7 @@ const cursos = [
 const filtros = ['Todos', 'Secundaria', 'Primaria'];
 
 export default function CursosTeacher() {
+  const navigation = useNavigation();
   const { width } = useWindowDimensions();
 
   const isMobile = width < 600;
@@ -115,7 +117,7 @@ export default function CursosTeacher() {
   );
 
   const gestionarCurso = (curso) => {
-    console.log('Gestionar curso:', curso.nombre, curso.seccion);
+    navigation.navigate('CursoDetalleTeacher', { id: curso.id });
   };
 
   return (
