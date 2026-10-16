@@ -28,7 +28,9 @@ export const studentLinking = {
   },
 };
 
-export default function StudentNavigator() {
+export default function StudentNavigator({ route }) {
+  const usuarioInicial = route?.params?.usuario;
+
   return (
     <Stack.Navigator
       initialRouteName="StudentDashboard"
@@ -40,9 +42,9 @@ export default function StudentNavigator() {
       />
 
       <Stack.Screen name="CursosStudent">
-        {() => (
+        {({ navigation }) => (
           <StudentDashboard>
-            <CursosStudent />
+            <CursosStudent navigation={navigation} />
           </StudentDashboard>
         )}
       </Stack.Screen>
@@ -50,55 +52,61 @@ export default function StudentNavigator() {
       <Stack.Screen name="CursoDetalleStudent">
         {({ route, navigation }) => (
           <StudentDashboard>
-            <CursoDetalleStudent route={route} navigation={navigation} />
+            <CursoDetalleStudent
+              route={route}
+              navigation={navigation}
+            />
           </StudentDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="TareasStudent">
-        {() => (
+        {({ navigation }) => (
           <StudentDashboard>
-            <TareasStudent />
+            <TareasStudent navigation={navigation} />
           </StudentDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="CalendarioStudent">
-        {() => (
+        {({ navigation }) => (
           <StudentDashboard>
-            <CalendarioStudent />
+            <CalendarioStudent navigation={navigation} />
           </StudentDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="CalificacionesStudent">
-        {() => (
+        {({ navigation }) => (
           <StudentDashboard>
-            <CalificacionesStudent />
+            <CalificacionesStudent navigation={navigation} />
           </StudentDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="MensajesStudent">
-        {() => (
+        {({ navigation }) => (
           <StudentDashboard>
-            <MensajesStudent />
+            <MensajesStudent navigation={navigation} />
           </StudentDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="PerfilStudent">
-        {() => (
+        {({ navigation }) => (
           <StudentDashboard>
-            <PerfilStudent />
+            <PerfilStudent
+              navigation={navigation}
+              usuarioInicial={usuarioInicial}
+            />
           </StudentDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="ConfiguracionStudent">
-        {() => (
+        {({ navigation }) => (
           <StudentDashboard>
-            <ConfiguracionStudent />
+            <ConfiguracionStudent navigation={navigation} />
           </StudentDashboard>
         )}
       </Stack.Screen>

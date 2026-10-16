@@ -9,6 +9,7 @@ import AdminNavigator, { adminLinking } from './src/navigation/AdminNavigator';
 import TeacherNavigator, { teacherLinking } from './src/navigation/TeacherNavigator';
 import StudentNavigator, { studentLinking } from './src/navigation/StudentNavigator';
 
+
 const Stack = createNativeStackNavigator();
 
 const linking = {
@@ -19,11 +20,12 @@ const linking = {
       Student: studentLinking,
       Teacher: teacherLinking,
       Admin: adminLinking,
-    }
+    },
   },
 };
 
 function App() {
+
   return (
     <SchoolDataProvider>
       <NavigationContainer linking={linking}>
@@ -33,11 +35,11 @@ function App() {
           <Stack.Screen name="Login" component={LoginScreen} />
 
           {/* PANEL DEL ESTUDIANTE */}
-          <Stack.Screen  name="Student"  component={StudentNavigator} />
+          <Stack.Screen  name="Student" component={StudentNavigator} />
 
           {/* PANEL DEL PROFESOR */}
 
-          <Stack.Screen name="Teacher"  component={TeacherNavigator} />
+          <Stack.Screen name="Teacher" component={TeacherNavigator} />
 
           {/* PANEL DEL ADMIN (sus pantallas están en src/navigation/AdminNavigator.js) */}
           <Stack.Screen name="Admin" component={AdminNavigator} />

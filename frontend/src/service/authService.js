@@ -1,3 +1,4 @@
+
 import { apiRequest } from '../config/api';
 
 export async function login(usuario, password) {
@@ -5,17 +6,39 @@ export async function login(usuario, password) {
     throw new Error('Completa todos los campos.');
   }
 
-  const cuentas = {
-    C232: { password: '123456', rol: 'teacher' },
-    E223: { password: '123456', rol: 'student' },
-    A001: { password: '123456', rol: 'admin' },
-  };
 
-  const cuenta = cuentas[usuario.trim().toUpperCase()];
+  const respuesta = await apiRequest('/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      identificador: usuario.trim(),
+      password,
+    }),
+  });
 
-  if (!cuenta || cuenta.password !== password) {
-    throw new Error('Código o contraseña incorrectos.');
+
+  if (!respuesta.usuario) {
+    throw new Error(
+      respuesta.mensaje || 'No se recibieron los datos del usuario.'
+    );
   }
 
-  return { rol: cuenta.rol };
+  const datos = respuesta.usuario;
+
+  const roles = {
+    ADMIN: 'ADMIN',
+    DOCENTE: 'TEACHER',
+    ALUMNO: 'STUDENT',
+  };
+
+  const rol = roles[String(datos.rol).toUpperCase()];
+
+  if (!rol) {
+    throw new Error('El usuario tiene un rol no reconocido.');
+  }
+
+  return { rol, usuario: datos };
 }

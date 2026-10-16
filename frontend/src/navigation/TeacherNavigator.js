@@ -30,21 +30,27 @@ export const teacherLinking = {
 
 export default function TeacherNavigator() {
   return (
-    <Stack.Navigator initialRouteName="TeacherDashboard" screenOptions={{ headerShown: false }} >
-      
-      <Stack.Screen name="TeacherDashboard" component={TeacherDashboard} />
+    <Stack.Navigator
+      initialRouteName="TeacherDashboard"
+      screenOptions={{ headerShown: false }}
+    >
+      <Stack.Screen
+        name="TeacherDashboard"
+        component={TeacherDashboard}
+      />
+
       <Stack.Screen name="PerfilTeacher">
-        {() => (
+        {({ navigation }) => (
           <TeacherDashboard>
-            <PerfilTeacher />
+            <PerfilTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="CursosTeacher">
-        {() => (
+        {({ navigation }) => (
           <TeacherDashboard>
-            <CursosTeacher />
+            <CursosTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
       </Stack.Screen>
@@ -52,51 +58,53 @@ export default function TeacherNavigator() {
       <Stack.Screen name="CursoDetalleTeacher">
         {({ route, navigation }) => (
           <TeacherDashboard>
-            <CursoDetalleTeacher route={route} navigation={navigation} />
+            <CursoDetalleTeacher
+              route={route}
+              navigation={navigation}
+            />
           </TeacherDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="TareasTeacher">
-        {() => (
+        {({ navigation }) => (
           <TeacherDashboard>
-            <TareasTeacher />
+            <TareasTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="CalificacionesTeacher">
-        {() => (
+        {({ navigation }) => (
           <TeacherDashboard>
-            <CalificacionesTeacher />
+            <CalificacionesTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="CalendarioTeacher">
-        {() => (
+        {({ navigation }) => (
           <TeacherDashboard>
-            <CalendarioTeacher />
+            <CalendarioTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="MensajesTeacher">
-        {() => (
+        {({ navigation }) => (
           <TeacherDashboard>
-            <MensajesTeacher />
+            <MensajesTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="ConfiguracionTeacher">
-        {() => (
+        {({ navigation }) => (
           <TeacherDashboard>
-            <ConfiguracionTeacher />
+            <ConfiguracionTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
       </Stack.Screen>
-      
     </Stack.Navigator>
   );
 }

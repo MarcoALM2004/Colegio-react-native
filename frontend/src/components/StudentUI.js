@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   View,
@@ -9,6 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+
 export const colors = {
   blue: '#2563EB',
   bg: '#F5F7FB',
@@ -17,6 +17,7 @@ export const colors = {
   muted: '#91A0B6',
   border: '#E8ECF3',
 };
+
 
 export function Page({ title, subtitle, children, action }) {
   return (
@@ -40,8 +41,13 @@ export function Page({ title, subtitle, children, action }) {
   );
 }
 
+
 export function Card({ children, style }) {
-  return <View style={[s.card, style]}>{children}</View>;
+  return (
+    <View style={[s.card, style]}>
+      {children}
+    </View>
+  );
 }
 
 export function Icon({
@@ -56,7 +62,11 @@ export function Icon({
         { backgroundColor: `${color}20` },
       ]}
     >
-      <Ionicons name={name} size={size} color={color} />
+      <Ionicons
+        name={name}
+        size={size}
+        color={color}
+      />
     </View>
   );
 }
@@ -70,7 +80,11 @@ export function Button({
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[s.button, outline && s.outline]}
+      activeOpacity={0.75}
+      style={[
+        s.button,
+        outline && s.outline,
+      ]}
     >
       <Text
         style={[
@@ -81,13 +95,13 @@ export function Button({
         {title}
       </Text>
 
-      {icon && (
+      {icon ? (
         <Ionicons
           name={icon}
           size={16}
-          color={outline ? colors.blue : '#fff'}
+          color={outline ? colors.blue : '#FFFFFF'}
         />
-      )}
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -107,31 +121,56 @@ export function Empty({ icon, text }) {
 
 const s = StyleSheet.create({
   page: {
-    flex: 1,
+    width: '100%',
+    minWidth: 0,
+    flexShrink: 1,
     backgroundColor: colors.bg,
   },
+
   content: {
-    padding: 28,
-    paddingBottom: 42,
+    width: '100%',
+    minWidth: 0,
+    padding: 20,
+    paddingBottom: 12,
   },
+
   head: {
+    width: '100%',
+    minWidth: 0,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 25,
-    gap: 14,
+    marginBottom: 22,
+    gap: 12,
   },
+
+  heading: {
+    flex: 1,
+    minWidth: 0,
+  },
+
+  action: {
+    maxWidth: '100%',
+  },
+
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: colors.text,
+    flexShrink: 1,
   },
+
   subtitle: {
     fontSize: 13,
     color: colors.muted,
     marginTop: 7,
+    flexShrink: 1,
   },
+
   card: {
+    width: '100%',
+    minWidth: 0,
     backgroundColor: colors.card,
     borderRadius: 16,
     borderWidth: 1,
@@ -139,43 +178,53 @@ const s = StyleSheet.create({
     padding: 18,
     marginBottom: 16,
   },
+
   icon: {
     width: 40,
     height: 40,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
+
   button: {
-    backgroundColor: colors.blue,
-    height: 38,
+    minHeight: 38,
     borderRadius: 10,
     paddingHorizontal: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
+    backgroundColor: colors.blue,
   },
+
   buttonText: {
-    color: '#fff',
+    color: '#FFFFFF',
     fontWeight: '600',
     fontSize: 12,
+    flexShrink: 1,
   },
+
   outline: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: colors.blue,
   },
+
   outlineText: {
     color: colors.blue,
   },
+
   empty: {
     alignItems: 'center',
     paddingVertical: 35,
   },
+
   emptyText: {
     color: colors.muted,
     marginTop: 10,
     fontSize: 13,
+    textAlign: 'center',
   },
 });

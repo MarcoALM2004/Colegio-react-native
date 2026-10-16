@@ -23,7 +23,6 @@ import MasAdmin from '../pages/admin/MasAdmin';
 
 const Stack = createNativeStackNavigator();
 
-// Rutas web del panel (se usan en el `linking` de App.js)
 export const adminLinking = {
   path: 'admin',
   screens: {
@@ -47,10 +46,20 @@ export const adminLinking = {
   },
 };
 
-export default function AdminNavigator() {
+export default function AdminNavigator({ route }) {
+  const usuario = route?.params?.usuario;
+
+  const codigoUsuario =
+    usuario?.codigo ??
+    usuario?.codigoUsuario ??
+    null;
+
   return (
-    <AdminDataProvider>
-      <Stack.Navigator initialRouteName="AdminInicio" screenOptions={{ headerShown: false }}>
+    <AdminDataProvider codigoUsuario={codigoUsuario}>
+      <Stack.Navigator
+        initialRouteName="AdminInicio"
+        screenOptions={{ headerShown: false }}
+      >
         {/* Secciones principales */}
         <Stack.Screen name="AdminInicio" component={InicioAdmin} />
         <Stack.Screen name="AdminUsuarios" component={UsuariosAdmin} />
@@ -69,6 +78,8 @@ export default function AdminNavigator() {
         <Stack.Screen name="AdminCursoForm" component={CursoFormAdmin} />
         <Stack.Screen name="AdminReporteDetalle" component={ReporteDetalleAdmin} />
         <Stack.Screen name="AdminChat" component={ChatAdmin} />
+
+        {/* Perfil del administrador */}
         <Stack.Screen name="AdminPerfil" component={PerfilAdmin} />
         <Stack.Screen name="AdminPerfilForm" component={PerfilFormAdmin} />
       </Stack.Navigator>

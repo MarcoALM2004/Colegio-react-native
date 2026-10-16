@@ -34,74 +34,19 @@ export default function TeacherDashboard({ children }) {
   const isCalendario = route.name === 'CalendarioTeacher';
   const isMensajes = route.name === 'MensajesTeacher';
   const isConfiguracion = route.name === 'ConfiguracionTeacher';
+  const isPerfil = route.name === 'PerfilTeacher';
 
+  // MENÚ LATERAL
   const menuItems = [
     {
-      label: 'Inicio',
-      icon: 'grid-outline',
-      active: isInicio,
-      onPress: () => navigation.navigate('TeacherDashboard'),
+      label: 'Perfil',
+      icon: 'person-circle-outline',
+      active: isPerfil,
+      onPress: () => {
+        setMostrarMas(false);
+        navigation.navigate('PerfilTeacher');
+      },
     },
-    {
-      label: 'Cursos',
-      icon: 'book-outline',
-      active: isCursos,
-      onPress: () => navigation.navigate('CursosTeacher'),
-    },
-    {
-      label: 'Tareas',
-      icon: 'document-text-outline',
-      active: isTareas,
-      onPress: () => navigation.navigate('TareasTeacher'),
-    },
-    {
-      label: 'Calificaciones',
-      icon: 'school-outline',
-      active: isCalificaciones,
-      onPress: () => navigation.navigate('CalificacionesTeacher'),
-    },
-    {
-      label: 'Calendario',
-      icon: 'calendar-outline',
-      active: isCalendario,
-      onPress: () => navigation.navigate('CalendarioTeacher'),
-    },
-    {
-      label: 'Mensajes',
-      icon: 'chatbubble-outline',
-      active: isMensajes,
-      onPress: () => navigation.navigate('MensajesTeacher'),
-    },
-  ];
-
-  const mobileItems = [
-    {
-      label: 'Inicio',
-      icon: 'home',
-      active: isInicio,
-      onPress: () => navigation.navigate('TeacherDashboard'),
-    },
-    {
-      label: 'Cursos',
-      icon: 'book-outline',
-      active: isCursos,
-      onPress: () => navigation.navigate('CursosTeacher'),
-    },
-    {
-      label: 'Tareas',
-      icon: 'document-text-outline',
-      active: isTareas,
-      onPress: () => navigation.navigate('TareasTeacher'),
-    },
-    {
-      label: 'Mensajes',
-      icon: 'chatbubble-outline',
-      active: isMensajes,
-      onPress: () => navigation.navigate('MensajesTeacher'),
-    },
-  ];
-
-  const extraItems = [
     {
       label: 'Calificaciones',
       icon: 'school-outline',
@@ -131,10 +76,65 @@ export default function TeacherDashboard({ children }) {
     },
   ];
 
+  // BARRA INFERIOR DEL CELULAR
+  const mobileItems = [
+    {
+      label: 'Inicio',
+      icon: 'home',
+      active: isInicio,
+      onPress: () => navigation.navigate('TeacherDashboard'),
+    },
+    {
+      label: 'Cursos',
+      icon: 'book-outline',
+      active: isCursos,
+      onPress: () => navigation.navigate('CursosTeacher'),
+    },
+    {
+      label: 'Tareas',
+      icon: 'document-text-outline',
+      active: isTareas,
+      onPress: () => navigation.navigate('TareasTeacher'),
+    },
+    {
+      label: 'Mensajes',
+      icon: 'chatbubble-outline',
+      active: isMensajes,
+      onPress: () => navigation.navigate('MensajesTeacher'),
+    },
+  ];
+
+  // OPCIONES DEL MENÚ MÁS
+  const extraItems = [
+    {
+      label: 'Perfil',
+      icon: 'person-circle-outline',
+      active: isPerfil,
+      onPress: () => navigation.navigate('PerfilTeacher'),
+    },
+    {
+      label: 'Calificaciones',
+      icon: 'school-outline',
+      active: isCalificaciones,
+      onPress: () => navigation.navigate('CalificacionesTeacher'),
+    },
+    {
+      label: 'Calendario',
+      icon: 'calendar-outline',
+      active: isCalendario,
+      onPress: () => navigation.navigate('CalendarioTeacher'),
+    },
+    {
+      label: 'Configuración',
+      icon: 'settings-outline',
+      active: isConfiguracion,
+      onPress: () => navigation.navigate('ConfiguracionTeacher'),
+    },
+  ];
 
   return (
     <View style={styles.container}>
-      {/* MENÚ LATERAL: ESCRITORIO Y TABLET */}
+      {/* MENÚ LATERAL: TABLET Y ESCRITORIO */}
       {!isMobile && (
         <View
           style={[
@@ -256,7 +256,7 @@ export default function TeacherDashboard({ children }) {
               />
             </TouchableOpacity>
 
-            {/* PERFIL DEL DOCENTE */}
+            {/* ACCESO AL PERFIL */}
             <TouchableOpacity
               style={styles.userArea}
               activeOpacity={0.7}
@@ -321,6 +321,7 @@ export default function TeacherDashboard({ children }) {
             />
           )}
 
+          {/* MENÚ MÁS */}
           {mostrarMas && (
             <View style={styles.moreMenu}>
               {extraItems.map((item) => (
@@ -352,6 +353,7 @@ export default function TeacherDashboard({ children }) {
             </View>
           )}
 
+          {/* BARRA INFERIOR */}
           <View style={styles.bottomNav}>
             {mobileItems.map((item) => (
               <TouchableOpacity
@@ -610,6 +612,16 @@ const styles = StyleSheet.create({
   bottomLabelActive: {
     color: '#2563EB',
     fontWeight: '700',
+  },
+
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(15, 23, 42, 0.12)',
+    zIndex: 15,
   },
 
   moreMenu: {

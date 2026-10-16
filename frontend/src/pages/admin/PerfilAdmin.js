@@ -29,7 +29,6 @@ export default function PerfilAdmin() {
           <InfoRow icon="person-outline" label="Nombre completo" value={`${profile.nombres} ${profile.apellidos}`} />
           <InfoRow icon="mail-outline" label="Correo institucional" value={profile.correo} />
           <InfoRow icon="call-outline" label="Teléfono" value={profile.telefono} />
-          <InfoRow icon="document-text-outline" label="Documento" value={profile.documento} />
           <InfoRow icon="shield-outline" label="Rol" value={profile.rol} />
           <InfoRow icon="calendar-outline" label="Fecha de registro" value={formatearFecha(profile.fechaRegistro)} />
         </Card>

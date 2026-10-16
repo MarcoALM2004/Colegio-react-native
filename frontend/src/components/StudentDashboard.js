@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   View,
@@ -80,7 +79,14 @@ export default function StudentDashboard({ children }) {
     menuItems[5],
   ];
 
+
   const extraItems = [
+    {
+      label: 'Perfil',
+      icon: 'person-circle-outline',
+      active: route.name === 'PerfilStudent',
+      onPress: () => navigation.navigate('PerfilStudent'),
+    },
     {
       label: 'Calendario',
       icon: 'calendar-outline',

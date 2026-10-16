@@ -1,7 +1,5 @@
 import { Platform } from 'react-native';
 
-// Emulador Android: accede al servidor de tu computadora.
-// Expo Go en celular: reemplaza por la IP local de tu computadora.
 export const API_BASE_URL =
   Platform.OS === 'android'
     ? 'http://10.0.2.2:8080'
@@ -11,16 +9,30 @@ export async function apiRequest(endpoint, options = {}) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
-      Accept: 'text/plain, application/json',
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
       ...options.headers,
     },
   });
 
-  const data = await response.text();
+  const texto = await response.text();
+
+  let data;
+
+  try {
+    data = texto ? JSON.parse(texto) : null;
+  } catch {
+    data = texto;
+  }
 
   if (!response.ok) {
+    const mensaje =
+      data && typeof data === 'object'
+        ? data.mensaje || data.message || data.error
+        : data;
+
     throw new Error(
-      data || `Error del servidor (${response.status})`
+      mensaje || `Error del servidor (${response.status})`
     );
   }
 

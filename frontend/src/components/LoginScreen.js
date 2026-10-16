@@ -1,9 +1,16 @@
-
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  useWindowDimensions, KeyboardAvoidingView, ScrollView,
-  Platform, ActivityIndicator, Image,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  useWindowDimensions,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -30,16 +37,40 @@ export default function LoginScreen({ navigation }) {
     setError('');
 
     try {
-      const resultadoLogin = await login(usuario, password);
+      const resultadoLogin = await login(usuario.trim(), password);
 
-      const rolUsuario = resultadoLogin.rol.toUpperCase();
+      const rolUsuario = String(resultadoLogin.rol || '')
+        .trim()
+        .toUpperCase();
 
-      if (rolUsuario === 'ADMIN' || rolUsuario === 'ADMINISTRADOR') {
-        navigation.replace('Admin');
-      } else if (rolUsuario === 'DOCENTE' || rolUsuario === 'TEACHER') {
-        navigation.replace('Teacher');
-      } else if (rolUsuario === 'ESTUDIANTE' || rolUsuario === 'STUDENT') {
-        navigation.replace('Student');
+      const datosUsuario = resultadoLogin.usuario;
+
+      if (!datosUsuario) {
+        setError('El servidor no devolvió los datos del usuario.');
+        return;
+      }
+
+      if (
+        rolUsuario === 'ADMIN' ||
+        rolUsuario === 'ADMINISTRADOR'
+      ) {
+        navigation.replace('Admin', {
+          usuario: datosUsuario,
+        });
+      } else if (
+        rolUsuario === 'DOCENTE' ||
+        rolUsuario === 'TEACHER'
+      ) {
+        navigation.replace('Teacher', {
+          usuario: datosUsuario,
+        });
+      } else if (
+        rolUsuario === 'ESTUDIANTE' ||
+        rolUsuario === 'STUDENT'
+      ) {
+        navigation.replace('Student', {
+          usuario: datosUsuario,
+        });
       } else {
         setError('El usuario no tiene un rol válido.');
       }
@@ -54,7 +85,7 @@ export default function LoginScreen({ navigation }) {
     } finally {
       setCargando(false);
     }
-  }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -87,7 +118,12 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.label}>Usuario</Text>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="person-outline" size={20} color="#7B8798" />
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color="#7B8798"
+              />
+
               <TextInput
                 style={styles.input}
                 placeholder="Ej. C232 o E223"
@@ -107,7 +143,12 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.label}>Contraseña</Text>
 
             <View style={styles.inputContainer}>
-              <Ionicons name="lock-closed-outline" size={20} color="#7B8798" />
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color="#7B8798"
+              />
+
               <TextInput
                 style={styles.input}
                 placeholder="Ingresa tu contraseña"
@@ -129,6 +170,11 @@ export default function LoginScreen({ navigation }) {
                 style={styles.eyeButton}
                 onPress={() => setMostrarPassword(!mostrarPassword)}
                 disabled={cargando}
+                accessibilityLabel={
+                  mostrarPassword
+                    ? 'Ocultar contraseña'
+                    : 'Mostrar contraseña'
+                }
               >
                 <Ionicons
                   name={mostrarPassword ? 'eye-outline' : 'eye-off-outline'}
@@ -140,13 +186,20 @@ export default function LoginScreen({ navigation }) {
 
             {!!error && (
               <View style={styles.errorContainer}>
-                <Ionicons name="alert-circle-outline" size={19} color="#DC2626" />
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={19}
+                  color="#DC2626"
+                />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
 
             <TouchableOpacity
-              style={[styles.button, cargando && styles.buttonDisabled]}
+              style={[
+                styles.button,
+                cargando && styles.buttonDisabled,
+              ]}
               onPress={iniciarSesion}
               disabled={cargando}
               activeOpacity={0.85}
@@ -156,11 +209,14 @@ export default function LoginScreen({ navigation }) {
               ) : (
                 <>
                   <Text style={styles.buttonText}>Iniciar sesión</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                  <Ionicons
+                    name="arrow-forward"
+                    size={20}
+                    color="#FFFFFF"
+                  />
                 </>
               )}
             </TouchableOpacity>
-
           </View>
 
           <Text style={styles.copyright}>
@@ -296,7 +352,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-
   copyright: {
     marginTop: 22,
     fontSize: 11,
