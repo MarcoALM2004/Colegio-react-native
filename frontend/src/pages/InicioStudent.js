@@ -1,17 +1,35 @@
 import React from 'react';
-import {View,Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions} from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  useWindowDimensions,
+} from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-export default function InicioStudent() {
-
+export default function InicioStudent({ usuario = {} }) {
   const navigation = useNavigation();
 
   const { width } = useWindowDimensions();
 
   const isMobile = width < 600;
   const isTablet = width >= 600 && width < 1000;
+
+  const nombres =
+    usuario.nombres ||
+    usuario.nombre ||
+    usuario.firstName ||
+    '';
+
+  const nombreMostrar =
+    (typeof nombres === 'string' ? nombres.trim() : '') ||
+    usuario.codigo ||
+    usuario.userId ||
+    'Estudiante';
 
   let titleSize;
 
@@ -50,7 +68,7 @@ export default function InicioStudent() {
           },
         ]}
       >
-        Buenos días, Marco
+        Buenos días, {nombreMostrar}
       </Text>
 
       <Text style={styles.subtitle}>
@@ -73,7 +91,6 @@ export default function InicioStudent() {
           },
         ]}
       >
-
         {/* CURSOS DE HOY */}
 
         <View
@@ -90,7 +107,6 @@ export default function InicioStudent() {
             },
           ]}
         >
-
           <View
             style={[
               styles.iconBox,
@@ -105,7 +121,6 @@ export default function InicioStudent() {
           </View>
 
           <View style={styles.statInfo}>
-
             <Text style={styles.statLabel}>
               Cursos de hoy
             </Text>
@@ -113,11 +128,8 @@ export default function InicioStudent() {
             <Text style={styles.statValue}>
               3
             </Text>
-
           </View>
-
         </View>
-
 
         {/* HORAS POR DÍA */}
 
@@ -135,7 +147,6 @@ export default function InicioStudent() {
             },
           ]}
         >
-
           <View
             style={[
               styles.iconBox,
@@ -150,7 +161,6 @@ export default function InicioStudent() {
           </View>
 
           <View style={styles.statInfo}>
-
             <Text style={styles.statLabel}>
               Horas por día
             </Text>
@@ -158,11 +168,8 @@ export default function InicioStudent() {
             <Text style={styles.statValue}>
               6 h
             </Text>
-
           </View>
-
         </View>
-
 
         {/* PROFESORES */}
 
@@ -180,7 +187,6 @@ export default function InicioStudent() {
             },
           ]}
         >
-
           <View
             style={[
               styles.iconBox,
@@ -195,7 +201,6 @@ export default function InicioStudent() {
           </View>
 
           <View style={styles.statInfo}>
-
             <Text style={styles.statLabel}>
               Profesores
             </Text>
@@ -203,17 +208,13 @@ export default function InicioStudent() {
             <Text style={styles.statValue}>
               8
             </Text>
-
           </View>
-
         </View>
-
       </View>
 
       {/* CURSOS DE HOY */}
 
       <View style={styles.mainCard}>
-
         <View
           style={[
             styles.cardHeader,
@@ -224,7 +225,6 @@ export default function InicioStudent() {
             },
           ]}
         >
-
           <View
             style={[
               styles.cardHeaderInfo,
@@ -235,7 +235,6 @@ export default function InicioStudent() {
               },
             ]}
           >
-
             <Text style={styles.sectionTitle}>
               Cursos de hoy
             </Text>
@@ -243,9 +242,7 @@ export default function InicioStudent() {
             <Text style={styles.sectionSubtitle}>
               Revisa tus clases programadas para hoy.
             </Text>
-
           </View>
-
 
           <TouchableOpacity
             style={[
@@ -260,20 +257,19 @@ export default function InicioStudent() {
                   : 0,
               },
             ]}
-            onPress={() => navigation.navigate('CursosStudent')}
+            onPress={() =>
+              navigation.navigate('CursosStudent')
+            }
           >
             <Text style={styles.viewAll}>
               Ver todos
             </Text>
           </TouchableOpacity>
-
         </View>
-
 
         {/* COMUNICACIÓN */}
 
         <View style={styles.courseItem}>
-
           <View
             style={[
               styles.courseIcon,
@@ -288,7 +284,6 @@ export default function InicioStudent() {
           </View>
 
           <View style={styles.courseInfo}>
-
             <Text
               style={styles.courseName}
               numberOfLines={1}
@@ -302,20 +297,16 @@ export default function InicioStudent() {
             >
               08:00 - 10:00 · Aula 204
             </Text>
-
           </View>
 
           <Text style={styles.courseTime}>
             Ahora
           </Text>
-
         </View>
-
 
         {/* COMPUTACIÓN */}
 
         <View style={styles.courseItem}>
-
           <View
             style={[
               styles.courseIcon,
@@ -330,7 +321,6 @@ export default function InicioStudent() {
           </View>
 
           <View style={styles.courseInfo}>
-
             <Text
               style={styles.courseName}
               numberOfLines={1}
@@ -344,20 +334,16 @@ export default function InicioStudent() {
             >
               10:30 - 12:30 · Aula 305
             </Text>
-
           </View>
 
           <Text style={styles.courseTime}>
             Próximo
           </Text>
-
         </View>
-
 
         {/* EDUCACIÓN FÍSICA */}
 
         <View style={styles.courseItem}>
-
           <View
             style={[
               styles.courseIcon,
@@ -372,7 +358,6 @@ export default function InicioStudent() {
           </View>
 
           <View style={styles.courseInfo}>
-
             <Text
               style={styles.courseName}
               numberOfLines={1}
@@ -386,21 +371,17 @@ export default function InicioStudent() {
             >
               14:00 - 16:00 · Aula 201
             </Text>
-
           </View>
 
           <Text style={styles.courseTime}>
             Próximo
           </Text>
-
         </View>
-
       </View>
 
       {/* ACTIVIDADES Y ANUNCIOS */}
 
       <View style={styles.mainCard}>
-
         <View
           style={[
             styles.cardHeader,
@@ -411,7 +392,6 @@ export default function InicioStudent() {
             },
           ]}
         >
-
           <View
             style={[
               styles.cardHeaderInfo,
@@ -422,7 +402,6 @@ export default function InicioStudent() {
               },
             ]}
           >
-
             <Text style={styles.sectionTitle}>
               Actividades y anuncios
             </Text>
@@ -430,9 +409,7 @@ export default function InicioStudent() {
             <Text style={styles.sectionSubtitle}>
               Revisa las novedades de tus cursos.
             </Text>
-
           </View>
-
 
           <TouchableOpacity
             style={[
@@ -447,20 +424,19 @@ export default function InicioStudent() {
                   : 0,
               },
             ]}
-            onPress={() => navigation.navigate('TareasStudent')}
+            onPress={() =>
+              navigation.navigate('TareasStudent')
+            }
           >
             <Text style={styles.viewAll}>
               Ver todo
             </Text>
           </TouchableOpacity>
-
         </View>
-
 
         {/* TAREA */}
 
         <View style={styles.activityItem}>
-
           <View
             style={[
               styles.activityIcon,
@@ -475,7 +451,6 @@ export default function InicioStudent() {
           </View>
 
           <View style={styles.activityInfo}>
-
             <Text
               style={styles.activityTitle}
               numberOfLines={1}
@@ -489,20 +464,16 @@ export default function InicioStudent() {
             >
               Entrega mañana · comunicación
             </Text>
-
           </View>
 
           <Text style={styles.deadline}>
             Mañana
           </Text>
-
         </View>
-
 
         {/* ANUNCIO */}
 
         <View style={styles.activityItem}>
-
           <View
             style={[
               styles.activityIcon,
@@ -517,7 +488,6 @@ export default function InicioStudent() {
           </View>
 
           <View style={styles.activityInfo}>
-
             <Text
               style={styles.activityTitle}
               numberOfLines={1}
@@ -531,20 +501,16 @@ export default function InicioStudent() {
             >
               Nueva información sobre la próxima clase
             </Text>
-
           </View>
 
           <Text style={styles.deadline}>
             Hoy
           </Text>
-
         </View>
-
 
         {/* EXAMEN */}
 
         <View style={styles.activityItem}>
-
           <View
             style={[
               styles.activityIcon,
@@ -559,7 +525,6 @@ export default function InicioStudent() {
           </View>
 
           <View style={styles.activityInfo}>
-
             <Text
               style={styles.activityTitle}
               numberOfLines={1}
@@ -573,31 +538,24 @@ export default function InicioStudent() {
             >
               Desarrollo de Software · Viernes
             </Text>
-
           </View>
 
           <Text style={styles.deadline}>
             Viernes
           </Text>
-
         </View>
-
       </View>
-
     </ScrollView>
   );
 }
 
-
 const styles = StyleSheet.create({
-
   /* CONTENEDOR */
 
   container: {
     flex: 1,
     backgroundColor: '#F5F7F8',
   },
-
 
   content: {
     paddingBottom: 40,
@@ -611,13 +569,11 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
 
-
   title: {
     fontSize: 28,
     fontWeight: '700',
     color: '#263244',
   },
-
 
   subtitle: {
     marginTop: 8,
@@ -632,7 +588,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-
   statCard: {
     minHeight: 82,
     backgroundColor: '#FFFFFF',
@@ -645,11 +600,9 @@ const styles = StyleSheet.create({
     borderColor: '#E8ECF3',
   },
 
-
   statInfo: {
     flex: 1,
   },
-
 
   iconBox: {
     width: 44,
@@ -659,27 +612,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-
   blueIcon: {
     backgroundColor: '#EAF2FF',
   },
-
 
   orangeIcon: {
     backgroundColor: '#FFF4DD',
   },
 
-
   purpleIcon: {
     backgroundColor: '#F0EBFF',
   },
-
 
   statLabel: {
     fontSize: 12,
     color: '#91A0B6',
   },
-
 
   statValue: {
     fontSize: 20,
@@ -699,18 +647,15 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-
   cardHeader: {
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 18,
   },
 
-
   cardHeaderInfo: {
     minWidth: 0,
   },
-
 
   sectionTitle: {
     fontSize: 17,
@@ -718,18 +663,15 @@ const styles = StyleSheet.create({
     color: '#293548',
   },
 
-
   sectionSubtitle: {
     fontSize: 12,
     color: '#91A0B6',
     marginTop: 5,
   },
 
-
   viewAllButton: {
     paddingVertical: 2,
   },
-
 
   viewAll: {
     color: '#2563EB',
@@ -747,7 +689,6 @@ const styles = StyleSheet.create({
     borderTopColor: '#EEF1F5',
   },
 
-
   courseIcon: {
     width: 42,
     height: 42,
@@ -757,27 +698,22 @@ const styles = StyleSheet.create({
     marginRight: 13,
   },
 
-
   blueCourse: {
     backgroundColor: '#20a87630',
   },
-
 
   purpleCourse: {
     backgroundColor: '#F0EBFF',
   },
 
-
   greenCourse: {
     backgroundColor: '#FFE1E1',
   },
-
 
   courseInfo: {
     flex: 1,
     minWidth: 0,
   },
-
 
   courseName: {
     fontSize: 13,
@@ -785,13 +721,11 @@ const styles = StyleSheet.create({
     color: '#293548',
   },
 
-
   courseDetails: {
     fontSize: 11,
     color: '#91A0B6',
     marginTop: 4,
   },
-
 
   courseTime: {
     fontSize: 11,
@@ -809,7 +743,6 @@ const styles = StyleSheet.create({
     borderTopColor: '#EEF1F5',
   },
 
-
   activityIcon: {
     width: 40,
     height: 40,
@@ -819,27 +752,22 @@ const styles = StyleSheet.create({
     marginRight: 13,
   },
 
-
   redActivity: {
     backgroundColor: '#FFE9EC',
   },
-
 
   blueActivity: {
     backgroundColor: '#EAF2FF',
   },
 
-
   orangeActivity: {
     backgroundColor: '#FFF4DD',
   },
-
 
   activityInfo: {
     flex: 1,
     minWidth: 0,
   },
-
 
   activityTitle: {
     fontSize: 13,
@@ -847,18 +775,15 @@ const styles = StyleSheet.create({
     color: '#293548',
   },
 
-
   activityDescription: {
     fontSize: 11,
     color: '#91A0B6',
     marginTop: 4,
   },
 
-
   deadline: {
     fontSize: 11,
     color: '#718096',
     marginLeft: 8,
   },
-
 });

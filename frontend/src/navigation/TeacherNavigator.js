@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -28,38 +29,42 @@ export const teacherLinking = {
   },
 };
 
-export default function TeacherNavigator() {
+export default function TeacherNavigator({ route }) {
+  const usuario = route?.params?.usuario;
+
   return (
     <Stack.Navigator
       initialRouteName="TeacherDashboard"
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen
-        name="TeacherDashboard"
-        component={TeacherDashboard}
-      />
+      <Stack.Screen name="TeacherDashboard">
+        {() => <TeacherDashboard usuario={usuario} />}
+      </Stack.Screen>
 
       <Stack.Screen name="PerfilTeacher">
         {({ navigation }) => (
-          <TeacherDashboard>
-            <PerfilTeacher navigation={navigation} />
+          <TeacherDashboard usuario={usuario}>
+            <PerfilTeacher
+              navigation={navigation}
+              usuarioInicial={usuario}
+            />
           </TeacherDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="CursosTeacher">
         {({ navigation }) => (
-          <TeacherDashboard>
+          <TeacherDashboard usuario={usuario}>
             <CursosTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="CursoDetalleTeacher">
-        {({ route, navigation }) => (
-          <TeacherDashboard>
+        {({ route: screenRoute, navigation }) => (
+          <TeacherDashboard usuario={usuario}>
             <CursoDetalleTeacher
-              route={route}
+              route={screenRoute}
               navigation={navigation}
             />
           </TeacherDashboard>
@@ -68,7 +73,7 @@ export default function TeacherNavigator() {
 
       <Stack.Screen name="TareasTeacher">
         {({ navigation }) => (
-          <TeacherDashboard>
+          <TeacherDashboard usuario={usuario}>
             <TareasTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
@@ -76,7 +81,7 @@ export default function TeacherNavigator() {
 
       <Stack.Screen name="CalificacionesTeacher">
         {({ navigation }) => (
-          <TeacherDashboard>
+          <TeacherDashboard usuario={usuario}>
             <CalificacionesTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
@@ -84,7 +89,7 @@ export default function TeacherNavigator() {
 
       <Stack.Screen name="CalendarioTeacher">
         {({ navigation }) => (
-          <TeacherDashboard>
+          <TeacherDashboard usuario={usuario}>
             <CalendarioTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
@@ -92,7 +97,7 @@ export default function TeacherNavigator() {
 
       <Stack.Screen name="MensajesTeacher">
         {({ navigation }) => (
-          <TeacherDashboard>
+          <TeacherDashboard usuario={usuario}>
             <MensajesTeacher navigation={navigation} />
           </TeacherDashboard>
         )}
@@ -100,7 +105,7 @@ export default function TeacherNavigator() {
 
       <Stack.Screen name="ConfiguracionTeacher">
         {({ navigation }) => (
-          <TeacherDashboard>
+          <TeacherDashboard usuario={usuario}>
             <ConfiguracionTeacher navigation={navigation} />
           </TeacherDashboard>
         )}

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   View,
@@ -15,7 +14,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import InicioTeacher from '../pages/InicioTeacher';
 import logoAlcantay from '../image/logosalcantay.png';
 
-export default function TeacherDashboard({ children }) {
+export default function TeacherDashboard({ children, usuario: usuarioProp }) {
   const navigation = useNavigation();
   const route = useRoute();
   const { width } = useWindowDimensions();
@@ -24,8 +23,30 @@ export default function TeacherDashboard({ children }) {
   const isMobile = width < 600;
   const isTablet = width >= 600 && width < 1000;
   const compactSidebar = width < 1000;
-
   const sidebarWidth = compactSidebar ? 70 : 235;
+
+  const usuario =
+    usuarioProp ||
+    route.params?.usuario ||
+    route.params?.user ||
+    {};
+
+  const nombres =
+    usuario.nombres ||
+    usuario.nombre ||
+    usuario.firstName ||
+    '';
+
+  const apellidos =
+    usuario.apellidos ||
+    usuario.apellido ||
+    usuario.lastName ||
+    '';
+
+  const nombreCompleto = `${nombres} ${apellidos}`.trim();
+  const nombreMostrar =
+    nombreCompleto || usuario.codigo || usuario.username || 'Docente';
+  const inicial = nombreMostrar.charAt(0).toUpperCase();
 
   const isInicio = route.name === 'TeacherDashboard';
   const isCursos = route.name === 'CursosTeacher';
@@ -34,53 +55,11 @@ export default function TeacherDashboard({ children }) {
   const isCalendario = route.name === 'CalendarioTeacher';
   const isMensajes = route.name === 'MensajesTeacher';
   const isConfiguracion = route.name === 'ConfiguracionTeacher';
-  const isPerfil = route.name === 'PerfilTeacher';
 
-  // MENÚ LATERAL
   const menuItems = [
     {
-      label: 'Perfil',
-      icon: 'person-circle-outline',
-      active: isPerfil,
-      onPress: () => {
-        setMostrarMas(false);
-        navigation.navigate('PerfilTeacher');
-      },
-    },
-    {
-      label: 'Calificaciones',
-      icon: 'school-outline',
-      active: isCalificaciones,
-      onPress: () => {
-        setMostrarMas(false);
-        navigation.navigate('CalificacionesTeacher');
-      },
-    },
-    {
-      label: 'Calendario',
-      icon: 'calendar-outline',
-      active: isCalendario,
-      onPress: () => {
-        setMostrarMas(false);
-        navigation.navigate('CalendarioTeacher');
-      },
-    },
-    {
-      label: 'Configuración',
-      icon: 'settings-outline',
-      active: isConfiguracion,
-      onPress: () => {
-        setMostrarMas(false);
-        navigation.navigate('ConfiguracionTeacher');
-      },
-    },
-  ];
-
-  // BARRA INFERIOR DEL CELULAR
-  const mobileItems = [
-    {
       label: 'Inicio',
-      icon: 'home',
+      icon: 'grid-outline',
       active: isInicio,
       onPress: () => navigation.navigate('TeacherDashboard'),
     },
@@ -97,6 +76,18 @@ export default function TeacherDashboard({ children }) {
       onPress: () => navigation.navigate('TareasTeacher'),
     },
     {
+      label: 'Calificaciones',
+      icon: 'school-outline',
+      active: isCalificaciones,
+      onPress: () => navigation.navigate('CalificacionesTeacher'),
+    },
+    {
+      label: 'Calendario',
+      icon: 'calendar-outline',
+      active: isCalendario,
+      onPress: () => navigation.navigate('CalendarioTeacher'),
+    },
+    {
       label: 'Mensajes',
       icon: 'chatbubble-outline',
       active: isMensajes,
@@ -104,12 +95,18 @@ export default function TeacherDashboard({ children }) {
     },
   ];
 
-  // OPCIONES DEL MENÚ MÁS
+  const mobileItems = [
+    menuItems[0],
+    menuItems[1],
+    menuItems[2],
+    menuItems[5],
+  ];
+
   const extraItems = [
     {
       label: 'Perfil',
       icon: 'person-circle-outline',
-      active: isPerfil,
+      active: route.name === 'PerfilTeacher',
       onPress: () => navigation.navigate('PerfilTeacher'),
     },
     {
@@ -132,9 +129,13 @@ export default function TeacherDashboard({ children }) {
     },
   ];
 
+  const irA = (accion) => {
+    setMostrarMas(false);
+    accion();
+  };
+
   return (
     <View style={styles.container}>
-      {/* MENÚ LATERAL: TABLET Y ESCRITORIO */}
       {!isMobile && (
         <View
           style={[
@@ -182,7 +183,6 @@ export default function TeacherDashboard({ children }) {
             ))}
           </View>
 
-          {/* CONFIGURACIÓN */}
           <TouchableOpacity
             style={[
               styles.settings,
@@ -191,7 +191,6 @@ export default function TeacherDashboard({ children }) {
             ]}
             onPress={() => navigation.navigate('ConfiguracionTeacher')}
             activeOpacity={0.75}
-            accessibilityLabel="Configuración"
           >
             <Ionicons
               name="settings-outline"
@@ -213,35 +212,27 @@ export default function TeacherDashboard({ children }) {
         </View>
       )}
 
-      {/* ÁREA PRINCIPAL */}
       <View style={styles.rightSide}>
-        {/* ENCABEZADO */}
         <View
           style={[
             styles.header,
             isMobile && styles.headerMobile,
             {
-              paddingHorizontal: isMobile
-                ? 16
-                : compactSidebar
-                  ? 12
-                  : 28,
+              paddingHorizontal: isMobile ? 16 : compactSidebar ? 12 : 28,
             },
           ]}
         >
-          <View style={styles.image}>
-            <Image
-              source={logoAlcantay}
-              style={[
-                styles.logoImage,
-                {
-                  width: isMobile ? 112 : isTablet ? 105 : 120,
-                  height: isMobile ? 44 : 50,
-                },
-              ]}
-              resizeMode="contain"
-            />
-          </View>
+          <Image
+            source={logoAlcantay}
+            style={[
+              styles.logoImage,
+              {
+                width: isMobile ? 112 : isTablet ? 105 : 120,
+                height: isMobile ? 44 : 50,
+              },
+            ]}
+            resizeMode="contain"
+          />
 
           <View style={styles.headerActions}>
             <TouchableOpacity
@@ -256,61 +247,45 @@ export default function TeacherDashboard({ children }) {
               />
             </TouchableOpacity>
 
-            {/* ACCESO AL PERFIL */}
+            {/* PERFIL DEL DOCENTE SIN FLECHITA */}
             <TouchableOpacity
               style={styles.userArea}
               activeOpacity={0.7}
               accessibilityLabel="Abrir perfil del docente"
-              onPress={() => {
-                setMostrarMas(false);
-                navigation.navigate('PerfilTeacher');
-              }}
+              onPress={() => navigation.navigate('PerfilTeacher')}
             >
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>A</Text>
+                <Text style={styles.avatarText}>{inicial}</Text>
               </View>
 
               {!isMobile && (
                 <View style={styles.userInfo}>
-                  <Text style={styles.userName}>Ana Torres</Text>
+                  <Text style={styles.userName} numberOfLines={1}>
+                    {nombreMostrar}
+                  </Text>
                   <Text style={styles.userRole}>Docente</Text>
                 </View>
-              )}
-
-              {!isMobile && (
-                <Ionicons
-                  name="chevron-down-outline"
-                  size={16}
-                  color="#718096"
-                  style={styles.arrow}
-                />
               )}
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* CONTENIDO DE LA PÁGINA */}
         <ScrollView
           style={styles.pageScroll}
           contentContainerStyle={[
             styles.content,
             {
-              paddingHorizontal: isMobile
-                ? 16
-                : compactSidebar
-                  ? 12
-                  : 38,
+              paddingHorizontal: isMobile ? 16 : compactSidebar ? 12 : 38,
               paddingTop: isMobile ? 16 : 25,
               paddingBottom: isMobile ? 90 : 30,
             },
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {children || <InicioTeacher />}
+          {children || <InicioTeacher usuario={usuario} />}
         </ScrollView>
       </View>
 
-      {/* NAVEGACIÓN INFERIOR: SOLO CELULAR */}
       {isMobile && (
         <>
           {mostrarMas && (
@@ -321,17 +296,13 @@ export default function TeacherDashboard({ children }) {
             />
           )}
 
-          {/* MENÚ MÁS */}
           {mostrarMas && (
             <View style={styles.moreMenu}>
               {extraItems.map((item) => (
                 <TouchableOpacity
                   key={item.label}
                   style={styles.moreItem}
-                  onPress={() => {
-                    setMostrarMas(false);
-                    item.onPress();
-                  }}
+                  onPress={() => irA(item.onPress)}
                   activeOpacity={0.7}
                 >
                   <Ionicons
@@ -339,7 +310,6 @@ export default function TeacherDashboard({ children }) {
                     size={19}
                     color={item.active ? '#2563EB' : '#526078'}
                   />
-
                   <Text
                     style={[
                       styles.moreText,
@@ -353,16 +323,12 @@ export default function TeacherDashboard({ children }) {
             </View>
           )}
 
-          {/* BARRA INFERIOR */}
           <View style={styles.bottomNav}>
             {mobileItems.map((item) => (
               <TouchableOpacity
                 key={item.label}
                 style={styles.bottomItem}
-                onPress={() => {
-                  setMostrarMas(false);
-                  item.onPress();
-                }}
+                onPress={() => irA(item.onPress)}
                 activeOpacity={0.7}
               >
                 <Ionicons
@@ -370,7 +336,6 @@ export default function TeacherDashboard({ children }) {
                   size={22}
                   color={item.active ? '#2563EB' : '#7D8798'}
                 />
-
                 <Text
                   style={[
                     styles.bottomLabel,
@@ -393,7 +358,6 @@ export default function TeacherDashboard({ children }) {
                 size={23}
                 color={mostrarMas ? '#2563EB' : '#7D8798'}
               />
-
               <Text
                 style={[
                   styles.bottomLabel,
@@ -417,17 +381,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F6FA',
     minHeight: '100%',
   },
-
   sidebar: {
-    width: 235,
     backgroundColor: '#FFFFFF',
     paddingTop: 28,
-    paddingHorizontal: 16,
     borderRightWidth: 1,
     borderRightColor: '#EDF0F5',
     flexShrink: 0,
   },
-
   logo: {
     fontSize: 21,
     fontWeight: '800',
@@ -435,11 +395,9 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     marginBottom: 38,
   },
-
   menu: {
     gap: 7,
   },
-
   menuItem: {
     height: 44,
     borderRadius: 13,
@@ -448,27 +406,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     gap: 13,
   },
-
   menuItemCompact: {
     justifyContent: 'center',
     paddingHorizontal: 0,
   },
-
   active: {
     backgroundColor: '#2563EB',
   },
-
   activeText: {
-    fontSize: 13,
-    fontWeight: '600',
     color: '#FFFFFF',
+    fontWeight: '600',
   },
-
   menuText: {
     fontSize: 13,
     color: '#7D8798',
   },
-
   settings: {
     marginTop: 'auto',
     height: 44,
@@ -479,43 +431,30 @@ const styles = StyleSheet.create({
     gap: 13,
     marginBottom: 18,
   },
-
   rightSide: {
     flex: 1,
     minWidth: 0,
   },
-
   header: {
     height: 73,
     backgroundColor: '#DBF9FF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 28,
     borderBottomWidth: 1,
     borderBottomColor: '#C8EDF3',
   },
-
   headerMobile: {
     height: 66,
   },
-
+  logoImage: {
+    height: 50,
+  },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-
-  image: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  logoImage: {
-    width: 120,
-    height: 50,
-  },
-
   iconButton: {
     width: 38,
     height: 40,
@@ -523,12 +462,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   userArea: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   avatar: {
     width: 36,
     height: 36,
@@ -537,43 +474,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   avatarText: {
     color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '700',
   },
-
   userInfo: {
     marginLeft: 10,
+    maxWidth: 180,
   },
-
   userName: {
     fontSize: 13,
     fontWeight: '700',
     color: '#293548',
   },
-
   userRole: {
     fontSize: 10,
     color: '#98A3B7',
     marginTop: 2,
   },
-
-  arrow: {
-    marginLeft: 10,
-  },
-
   pageScroll: {
     flex: 1,
     minWidth: 0,
   },
-
   content: {
     flexGrow: 1,
     minWidth: 0,
   },
-
   bottomNav: {
     position: 'absolute',
     bottom: 0,
@@ -595,7 +522,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     zIndex: 10,
   },
-
   bottomItem: {
     flex: 1,
     height: 58,
@@ -603,27 +529,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 3,
   },
-
   bottomLabel: {
     fontSize: 10,
     color: '#7D8798',
   },
-
   bottomLabelActive: {
     color: '#2563EB',
     fontWeight: '700',
   },
-
   overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(15, 23, 42, 0.12)',
     zIndex: 15,
   },
-
   moreMenu: {
     position: 'absolute',
     right: 12,
@@ -634,14 +552,13 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#E5EAF1',
-    elevation: 10,
+    elevation: 20,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
     zIndex: 20,
   },
-
   moreItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -649,7 +566,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 13,
   },
-
   moreText: {
     fontSize: 13,
     color: '#526078',

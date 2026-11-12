@@ -16,37 +16,45 @@ const texto = '#293548';
 const gris = '#91A0B8';
 const borde = '#E5EBF4';
 
-export default function InicioTeacher() {
+export default function InicioTeacher({ usuario = {} }) {
   const { width } = useWindowDimensions();
   const movil = width < 600;
   const tablet = width >= 600 && width < 1000;
 
+  const nombreDocente = [
+    usuario.nombres || usuario.nombre || '',
+    usuario.apellidos || usuario.apellido || '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .trim() || 'Docente';
+
   const estadisticas = [
     {
-      icon: 'book-outline',
+      icon: 'book',
       color: azul,
-      titulo: 'Cursos',
+      titulo: 'Cursos asignados',
       valor: '5',
       detalle: 'Este ciclo escolar',
     },
     {
-      icon: 'people-outline',
+      icon: 'people',
       color: verde,
       titulo: 'Estudiantes',
       valor: '142',
       detalle: 'En este periodo',
     },
     {
-      icon: 'document-text-outline',
+      icon: 'clipboard',
       color: naranja,
-      titulo: 'Tareas por calificar',
+      titulo: 'Por calificar',
       valor: '18',
       detalle: '6 vencen hoy',
     },
     {
-      icon: 'bar-chart-outline',
+      icon: 'pie-chart',
       color: morado,
-      titulo: 'Asistencia hoy',
+      titulo: 'Asistencia de hoy',
       valor: '94%',
       detalle: '133 de 142 presentes',
     },
@@ -54,7 +62,7 @@ export default function InicioTeacher() {
 
   const clases = [
     {
-      icon: 'book-outline',
+      icon: 'book',
       color: azul,
       titulo: 'Comunicación',
       detalle: '5.º A · Aula 204',
@@ -62,7 +70,7 @@ export default function InicioTeacher() {
       estado: 'En curso',
     },
     {
-      icon: 'flask-outline',
+      icon: 'flask',
       color: verde,
       titulo: 'Literatura',
       detalle: '4.º B · Laboratorio',
@@ -70,7 +78,7 @@ export default function InicioTeacher() {
       estado: 'Próxima',
     },
     {
-      icon: 'people-outline',
+      icon: 'people',
       color: morado,
       titulo: 'Literatura',
       detalle: '5.º A · Aula 204',
@@ -81,21 +89,21 @@ export default function InicioTeacher() {
 
   const pendientes = [
     {
-      icon: 'document-text-outline',
+      icon: 'document-text',
       color: azul,
       titulo: 'Práctica: fracciones',
       detalle: 'Matemática · 5.º A',
       derecha: '8 entregas',
     },
     {
-      icon: 'flask-outline',
+      icon: 'flask',
       color: verde,
       titulo: 'Informe de laboratorio',
       detalle: 'Ciencia y Tecnología · 4.º B',
       derecha: '6 entregas',
     },
     {
-      icon: 'document-outline',
+      icon: 'document',
       color: naranja,
       titulo: 'Ficha de ejercicios',
       detalle: 'Matemática · 4.º A',
@@ -105,21 +113,21 @@ export default function InicioTeacher() {
 
   const anuncios = [
     {
-      icon: 'information-circle-outline',
+      icon: 'information-circle',
       color: verde,
       titulo: 'Comunicación',
       detalle: 'Suspensión de clases por temas de salud',
       derecha: 'Hace 8 min',
     },
     {
-      icon: 'chatbubble-outline',
+      icon: 'chatbubble',
       color: azul,
       titulo: 'Literatura',
       detalle: 'Reunión con sus padres',
       derecha: 'Hace 30 min',
     },
     {
-      icon: 'book-outline',
+      icon: 'book',
       color: naranja,
       titulo: 'Lenguajes',
       detalle: 'Tarea que se revisará en el examen',
@@ -150,51 +158,20 @@ export default function InicioTeacher() {
 
   function TarjetaEstadistica({ item }) {
     return (
-      <View
-        style={[
-          styles.tarjetaEstadistica,
-          movil && styles.tarjetaEstadisticaMovil,
-          { backgroundColor: item.color + '12' },
-        ]}
-      >
+      <View style={styles.tarjetaEstadistica}>
         <View
           style={[
             styles.iconoGrande,
-            movil && styles.iconoGrandeMovil,
             { backgroundColor: item.color + '20' },
           ]}
         >
-          <Ionicons
-            name={item.icon}
-            size={movil ? 20 : 22}
-            color={item.color}
-          />
+          <Ionicons name={item.icon} size={22} color={item.color} />
         </View>
 
-        <View style={styles.infoEstadistica}>
-          <Text
-            style={[
-              styles.etiqueta,
-              movil && styles.etiquetaMovil,
-            ]}
-          >
-            {item.titulo}
-          </Text>
-
-          <Text
-            style={[
-              styles.valor,
-              movil && styles.valorMovil,
-            ]}
-          >
-            {item.valor}
-          </Text>
-
-          {!movil && (
-            <Text style={styles.detalle}>
-              {item.detalle}
-            </Text>
-          )}
+        <View style={{ flex: 1 }}>
+          <Text style={styles.etiqueta}>{item.titulo}</Text>
+          <Text style={styles.valor}>{item.valor}</Text>
+          <Text style={styles.detalle}>{item.detalle}</Text>
         </View>
       </View>
     );
@@ -202,63 +179,38 @@ export default function InicioTeacher() {
 
   function Fila({ item, ultima = false }) {
     return (
-      <View
-        style={[
-          styles.fila,
-          movil && styles.filaMovil,
-          ultima && styles.ultimaFila,
-        ]}
-      >
+      <View style={[styles.fila, ultima && styles.ultimaFila]}>
         <View
           style={[
             styles.iconoFila,
-            movil && styles.iconoFilaMovil,
             { backgroundColor: item.color + '20' },
           ]}
         >
-          <Ionicons
-            name={item.icon}
-            size={movil ? 17 : 18}
-            color={item.color}
-          />
+          <Ionicons name={item.icon} size={18} color={item.color} />
         </View>
 
         <View style={styles.infoFila}>
-          <Text style={styles.tituloFila}>
-            {item.titulo}
-          </Text>
-
-          <Text style={styles.detalleFila}>
-            {item.detalle}
-          </Text>
+          <Text style={styles.tituloFila}>{item.titulo}</Text>
+          <Text style={styles.detalleFila}>{item.detalle}</Text>
         </View>
 
-        <View
-          style={[
-            styles.derechaFila,
-            movil && styles.derechaFilaMovil,
-          ]}
-        >
+        <View style={styles.derechaFila}>
           {item.hora && (
-            <Text style={styles.horaFila}>
-              {item.hora}
-            </Text>
+            <Text style={styles.tituloFila}>{item.hora}</Text>
           )}
 
           {item.derecha && (
-            <Text style={styles.tituloFila}>
-              {item.derecha}
-            </Text>
+            <Text style={styles.tituloFila}>{item.derecha}</Text>
           )}
 
           {item.estado && (
             <Text
               style={[
                 styles.estado,
-                { color: item.color },
-                item.estado === 'En curso'
-                  ? styles.estadoEnCurso
-                  : styles.estadoProxima,
+                {
+                  color: item.color,
+                  backgroundColor: item.color + '20',
+                },
               ]}
             >
               {item.estado}
@@ -271,27 +223,11 @@ export default function InicioTeacher() {
 
   function Panel({ titulo, accion, children }) {
     return (
-      <View
-        style={[
-          styles.panel,
-          movil && styles.panelMovil,
-        ]}
-      >
+      <View style={styles.panel}>
         <View style={styles.cabeceraPanel}>
-          <Text
-            style={[
-              styles.tituloPanel,
-              movil && styles.tituloPanelMovil,
-            ]}
-          >
-            {titulo}
-          </Text>
-
-          <Text style={styles.accionPanel}>
-            {accion}
-          </Text>
+          <Text style={styles.tituloPanel}>{titulo}</Text>
+          <Text style={styles.accionPanel}>{accion}</Text>
         </View>
-
         {children}
       </View>
     );
@@ -300,88 +236,46 @@ export default function InicioTeacher() {
   return (
     <ScrollView
       style={styles.contenedor}
-      contentContainerStyle={[
-        styles.contenido,
-        {
-          paddingHorizontal: movil ? 0 : tablet ? 22 : 30,
-          paddingTop: movil ? 8 : 20,
-          paddingBottom: movil ? 24 : 36,
-        },
-      ]}
+      contentContainerStyle={{
+        paddingHorizontal: movil ? 14 : tablet ? 22 : 30,
+        paddingTop: movil ? 14 : 20,
+        paddingBottom: 36,
+      }}
       showsVerticalScrollIndicator={false}
     >
-      {/* BIENVENIDA */}
-
       <Text style={styles.fecha}>
-        12 de octubre de 2026
+        {new Date().toLocaleDateString('es-PE', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })}
       </Text>
 
-      <Text
-        style={[
-          styles.saludo,
-          { fontSize: movil ? 22 : 28 },
-        ]}
-      >
-        Buenos días, profesora Ana
+      <Text style={[styles.saludo, { fontSize: movil ? 23 : 28 }]}>
+        Buenos días, {nombreDocente}
       </Text>
 
-      <Text
-        style={[
-          styles.subtitulo,
-          movil && styles.subtituloMovil,
-        ]}
-      >
+      <Text style={styles.subtitulo}>
         Aquí tienes el resumen de tus clases y actividades de hoy.
       </Text>
 
-      {/* ESTADÍSTICAS */}
-
-      <View
-        style={[
-          styles.estadisticas,
-          movil && styles.estadisticasMovil,
-        ]}
-      >
+      <View style={styles.estadisticas}>
         {estadisticas.map((item) => (
           <View
             key={item.titulo}
-            style={[
-              styles.contenedorEstadistica,
-              {
-                width: movil
-                  ? '48%'
-                  : tablet
-                  ? '48%'
-                  : undefined,
-                flex: movil || tablet ? undefined : 1,
-              },
-            ]}
+            style={{
+              width: movil ? '100%' : tablet ? '48%' : undefined,
+              flex: movil || tablet ? undefined : 1,
+            }}
           >
             <TarjetaEstadistica item={item} />
           </View>
         ))}
       </View>
 
-      {/* PANELES */}
-
-      <View
-        style={[
-          styles.columnas,
-          movil && styles.columnaMovil,
-        ]}
-      >
-        {/* COLUMNA IZQUIERDA */}
-
-        <View
-          style={[
-            styles.columna,
-            movil && styles.columnaCompleta,
-          ]}
-        >
-          <Panel
-            titulo="Próximas clases"
-            accion="Ver todas"
-          >
+      <View style={[styles.columnas, movil && styles.columnaMovil]}>
+        <View style={styles.columna}>
+          <Panel titulo="Próximas clases" accion="Ver horario">
             {clases.map((item, i) => (
               <Fila
                 key={item.titulo + i}
@@ -392,10 +286,7 @@ export default function InicioTeacher() {
           </Panel>
 
           {!movil && (
-            <Panel
-              titulo="Asistencia por sección"
-              accion="Ver reporte"
-            >
+            <Panel titulo="Asistencia por sección" accion="Ver reporte">
               <Text style={styles.textoAsistencia}>
                 Resumen de asistencia de hoy
               </Text>
@@ -405,15 +296,11 @@ export default function InicioTeacher() {
                   key={item.seccion}
                   style={[
                     styles.filaAsistencia,
-                    i === asistencia.length - 1 &&
-                      styles.ultimaFila,
+                    i === asistencia.length - 1 && styles.ultimaFila,
                   ]}
                 >
                   <View style={styles.etiquetaAsistencia}>
-                    <Text style={styles.tituloFila}>
-                      {item.seccion}
-                    </Text>
-
+                    <Text style={styles.tituloFila}>{item.seccion}</Text>
                     <Text style={styles.detalleFila}>
                       {item.comentario}
                     </Text>
@@ -440,14 +327,9 @@ export default function InicioTeacher() {
           )}
         </View>
 
-        {/* COLUMNA DERECHA: SOLO ESCRITORIO */}
-
         {!movil && (
           <View style={styles.columna}>
-            <Panel
-              titulo="Pendiente de calificar"
-              accion="Ver todas"
-            >
+            <Panel titulo="Pendiente de calificar" accion="Ver todas">
               {pendientes.map((item, i) => (
                 <Fila
                   key={item.titulo}
@@ -457,10 +339,7 @@ export default function InicioTeacher() {
               ))}
             </Panel>
 
-            <Panel
-              titulo="Anuncios a alumnos"
-              accion="Ver todo"
-            >
+            <Panel titulo="Anuncios a alumnos" accion="Ver todo">
               {anuncios.map((item, i) => (
                 <Fila
                   key={item.titulo}
@@ -480,56 +359,28 @@ const styles = StyleSheet.create({
   contenedor: {
     flex: 1,
     minWidth: 0,
-    width: '100%',
   },
-
-  contenido: {
-    flexGrow: 1,
-    width: '100%',
-  },
-
   fecha: {
     fontSize: 12,
     color: gris,
     marginBottom: 7,
   },
-
   saludo: {
     fontWeight: '800',
     color: texto,
     marginBottom: 6,
   },
-
   subtitulo: {
     fontSize: 13,
     color: gris,
     marginBottom: 26,
-    lineHeight: 19,
   },
-
-  subtituloMovil: {
-    fontSize: 12,
-    marginBottom: 17,
-  },
-
   estadisticas: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
     marginBottom: 22,
-    width: '100%',
   },
-
-  estadisticasMovil: {
-    gap: 8,
-    marginBottom: 20,
-    justifyContent: 'space-between',
-  },
-
-  contenedorEstadistica: {
-    minWidth: 0,
-  },
-
   tarjetaEstadistica: {
     minHeight: 88,
     flexDirection: 'row',
@@ -541,16 +392,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: borde,
   },
-
-  tarjetaEstadisticaMovil: {
-    minHeight: 62,
-    height: 70,
-    padding: 9,
-    gap: 7,
-    borderRadius: 11,
-    borderWidth: 0,
-  },
-
   iconoGrande: {
     width: 42,
     height: 42,
@@ -558,72 +399,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  iconoGrandeMovil: {
-    width: 31,
-    height: 31,
-    borderRadius: 9,
-  },
-
-  infoEstadistica: {
-    flex: 1,
-    minWidth: 0,
-  },
-
   etiqueta: {
     fontSize: 11,
     color: gris,
   },
-
-  etiquetaMovil: {
-    fontSize: 10,
-    lineHeight: 13,
-  },
-
   valor: {
     fontSize: 23,
     fontWeight: '800',
     color: texto,
     marginTop: 3,
   },
-
-  valorMovil: {
-    fontSize: 18,
-    marginTop: 1,
-  },
-
   detalle: {
     fontSize: 10,
     color: gris,
     marginTop: 4,
   },
-
   columnas: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 16,
-    width: '100%',
   },
-
   columnaMovil: {
     flexDirection: 'column',
-    width: '100%',
-    alignSelf: 'stretch',
-    gap: 14,
   },
-
   columna: {
     flex: 1,
     minWidth: 0,
     gap: 16,
   },
-
-  columnaCompleta: {
-    width: '100%',
-    flex: 1,
-    alignSelf: 'stretch',
-  },
-
   panel: {
     width: '100%',
     minHeight: 300,
@@ -633,46 +436,28 @@ const styles = StyleSheet.create({
     borderColor: borde,
     padding: 18,
     paddingTop: 20,
-    paddingBottom: 18,
+    paddingBottom: 0,
   },
-
-  panelMovil: {
-    width: '100%',
-    minHeight: 0,
-    padding: 12,
-    paddingTop: 14,
-    paddingBottom: 12,
-    borderRadius: 12,
-  },
-
   cabeceraPanel: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
-    paddingBottom: 11,
-    marginBottom: 5,
+    gap: 10,
+    paddingBottom: 13,
+    marginBottom: 9,
     borderBottomWidth: 1,
     borderBottomColor: borde,
   },
-
   tituloPanel: {
     flex: 1,
     fontSize: 14,
     fontWeight: '800',
     color: texto,
   },
-
-  tituloPanelMovil: {
-    fontSize: 13,
-  },
-
   accionPanel: {
     color: azul,
     fontSize: 11,
-    fontWeight: '600',
   },
-
   fila: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -682,19 +467,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F3F8',
   },
-
-  filaMovil: {
-    gap: 9,
-    minHeight: 65,
-    paddingVertical: 10,
-  },
-
   ultimaFila: {
     borderBottomWidth: 0,
     marginBottom: 0,
-    paddingBottom: 6,
+    paddingBottom: 12,
   },
-
   iconoFila: {
     width: 36,
     height: 36,
@@ -703,72 +480,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexShrink: 0,
   },
-
-  iconoFilaMovil: {
-    width: 31,
-    height: 31,
-    borderRadius: 9,
-  },
-
   infoFila: {
     flex: 1,
     minWidth: 0,
   },
-
   tituloFila: {
     fontSize: 11,
     fontWeight: '700',
     color: texto,
   },
-
   detalleFila: {
     fontSize: 10,
     color: gris,
     marginTop: 5,
     lineHeight: 15,
   },
-
   derechaFila: {
     alignItems: 'flex-end',
     maxWidth: 100,
     gap: 6,
   },
-
-  derechaFilaMovil: {
-    maxWidth: 78,
-    gap: 5,
-  },
-
-  horaFila: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: texto,
-  },
-
   estado: {
     fontSize: 9,
     fontWeight: '700',
     paddingHorizontal: 8,
     paddingVertical: 5,
-    borderRadius: 8,
+    borderRadius: 6,
     overflow: 'hidden',
   },
-
-  estadoEnCurso: {
-    backgroundColor: '#D8F7E7',
-  },
-
-  estadoProxima: {
-    backgroundColor: '#EDF2F8',
-  },
-
   textoAsistencia: {
     color: gris,
     fontSize: 11,
     marginTop: 8,
     marginBottom: 6,
   },
-
   filaAsistencia: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -779,11 +524,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F3F8',
   },
-
   etiquetaAsistencia: {
     width: 76,
   },
-
   fondoBarra: {
     flex: 1,
     height: 9,
@@ -791,12 +534,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#EAF0F7',
   },
-
   barra: {
     height: '100%',
     borderRadius: 10,
   },
-
   porcentaje: {
     width: 36,
     textAlign: 'right',

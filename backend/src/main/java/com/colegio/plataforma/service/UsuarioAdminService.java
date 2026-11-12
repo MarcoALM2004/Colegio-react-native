@@ -119,8 +119,14 @@ public class UsuarioAdminService {
         String codigo =
                 usuarioRepository.generarSiguienteCodigo(rol);
 
-        String contrasenaTemporal =
-                generarContrasenaTemporal();
+        String contrasenaTemporal = request.getPassword();
+
+        if (contrasenaTemporal == null
+                || contrasenaTemporal.length() < 8) {
+            throw new IllegalArgumentException(
+                    "La contraseña debe tener al menos 8 caracteres."
+            );
+        }
 
         String passwordHash =
                 passwordEncoder.encode(contrasenaTemporal);

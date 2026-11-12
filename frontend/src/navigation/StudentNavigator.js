@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -29,31 +30,30 @@ export const studentLinking = {
 };
 
 export default function StudentNavigator({ route }) {
-  const usuarioInicial = route?.params?.usuario;
+  const usuario = route?.params?.usuario;
 
   return (
     <Stack.Navigator
       initialRouteName="StudentDashboard"
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen
-        name="StudentDashboard"
-        component={StudentDashboard}
-      />
+      <Stack.Screen name="StudentDashboard">
+        {() => <StudentDashboard usuario={usuario} />}
+      </Stack.Screen>
 
       <Stack.Screen name="CursosStudent">
         {({ navigation }) => (
-          <StudentDashboard>
+          <StudentDashboard usuario={usuario}>
             <CursosStudent navigation={navigation} />
           </StudentDashboard>
         )}
       </Stack.Screen>
 
       <Stack.Screen name="CursoDetalleStudent">
-        {({ route, navigation }) => (
-          <StudentDashboard>
+        {({ route: screenRoute, navigation }) => (
+          <StudentDashboard usuario={usuario}>
             <CursoDetalleStudent
-              route={route}
+              route={screenRoute}
               navigation={navigation}
             />
           </StudentDashboard>
@@ -62,7 +62,7 @@ export default function StudentNavigator({ route }) {
 
       <Stack.Screen name="TareasStudent">
         {({ navigation }) => (
-          <StudentDashboard>
+          <StudentDashboard usuario={usuario}>
             <TareasStudent navigation={navigation} />
           </StudentDashboard>
         )}
@@ -70,7 +70,7 @@ export default function StudentNavigator({ route }) {
 
       <Stack.Screen name="CalendarioStudent">
         {({ navigation }) => (
-          <StudentDashboard>
+          <StudentDashboard usuario={usuario}>
             <CalendarioStudent navigation={navigation} />
           </StudentDashboard>
         )}
@@ -78,7 +78,7 @@ export default function StudentNavigator({ route }) {
 
       <Stack.Screen name="CalificacionesStudent">
         {({ navigation }) => (
-          <StudentDashboard>
+          <StudentDashboard usuario={usuario}>
             <CalificacionesStudent navigation={navigation} />
           </StudentDashboard>
         )}
@@ -86,7 +86,7 @@ export default function StudentNavigator({ route }) {
 
       <Stack.Screen name="MensajesStudent">
         {({ navigation }) => (
-          <StudentDashboard>
+          <StudentDashboard usuario={usuario}>
             <MensajesStudent navigation={navigation} />
           </StudentDashboard>
         )}
@@ -94,10 +94,10 @@ export default function StudentNavigator({ route }) {
 
       <Stack.Screen name="PerfilStudent">
         {({ navigation }) => (
-          <StudentDashboard>
+          <StudentDashboard usuario={usuario}>
             <PerfilStudent
               navigation={navigation}
-              usuarioInicial={usuarioInicial}
+              usuarioInicial={usuario}
             />
           </StudentDashboard>
         )}
@@ -105,8 +105,11 @@ export default function StudentNavigator({ route }) {
 
       <Stack.Screen name="ConfiguracionStudent">
         {({ navigation }) => (
-          <StudentDashboard>
-            <ConfiguracionStudent navigation={navigation} />
+          <StudentDashboard usuario={usuario}>
+            <ConfiguracionStudent
+              navigation={navigation}
+              usuarioInicial={usuario}
+            />
           </StudentDashboard>
         )}
       </Stack.Screen>

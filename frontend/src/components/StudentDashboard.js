@@ -14,7 +14,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import InicioStudent from '../pages/InicioStudent';
 import logoAlcantay from '../image/logosalcantay.png';
 
-export default function StudentDashboard({ children }) {
+export default function StudentDashboard({ children, usuario: usuarioProp }) {
   const navigation = useNavigation();
   const route = useRoute();
   const { width } = useWindowDimensions();
@@ -24,6 +24,35 @@ export default function StudentDashboard({ children }) {
   const isTablet = width >= 600 && width < 1000;
   const compactSidebar = width < 1000;
   const sidebarWidth = compactSidebar ? 70 : 235;
+
+  // Usuario recibido por propiedades o por los parámetros de navegación.
+  const usuario =
+    usuarioProp ||
+    route.params?.usuario ||
+    route.params?.user ||
+    {};
+
+  const nombres =
+    usuario.nombres ||
+    usuario.nombre ||
+    usuario.firstName ||
+    '';
+
+  const apellidos =
+    usuario.apellidos ||
+    usuario.apellido ||
+    usuario.lastName ||
+    '';
+
+  const nombreCompleto = `${nombres} ${apellidos}`.trim();
+
+  const nombreMostrar =
+    nombreCompleto ||
+    usuario.codigo ||
+    usuario.userId ||
+    'Estudiante';
+
+  const inicial = nombreMostrar.charAt(0).toUpperCase();
 
   const isInicio = route.name === 'StudentDashboard';
   const isCursos = route.name === 'CursosStudent';
@@ -79,7 +108,6 @@ export default function StudentDashboard({ children }) {
     menuItems[5],
   ];
 
-
   const extraItems = [
     {
       label: 'Perfil',
@@ -125,7 +153,9 @@ export default function StudentDashboard({ children }) {
             },
           ]}
         >
-          {!compactSidebar && <Text style={styles.logo}>EduConnect</Text>}
+          {!compactSidebar && (
+            <Text style={styles.logo}>EduConnect</Text>
+          )}
 
           <View style={styles.menu}>
             {menuItems.map((item) => (
@@ -165,7 +195,9 @@ export default function StudentDashboard({ children }) {
               compactSidebar && styles.menuItemCompact,
               isConfiguracion && styles.active,
             ]}
-            onPress={() => navigation.navigate('ConfiguracionStudent')}
+            onPress={() =>
+              navigation.navigate('ConfiguracionStudent')
+            }
             activeOpacity={0.75}
           >
             <Ionicons
@@ -173,6 +205,7 @@ export default function StudentDashboard({ children }) {
               size={19}
               color={isConfiguracion ? '#FFFFFF' : '#7D8798'}
             />
+
             {!compactSidebar && (
               <Text
                 style={[
@@ -227,30 +260,32 @@ export default function StudentDashboard({ children }) {
               />
             </TouchableOpacity>
 
+            {/* USUARIO: SIN FLECHITA DESPLEGABLE */}
             <TouchableOpacity
               style={styles.userArea}
               activeOpacity={0.7}
               accessibilityLabel="Perfil del estudiante"
-              onPress={() => navigation.navigate('PerfilStudent')}
+              onPress={() =>
+                navigation.navigate('PerfilStudent')
+              }
             >
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>M</Text>
+                <Text style={styles.avatarText}>{inicial}</Text>
               </View>
 
               {!isMobile && (
                 <View style={styles.userInfo}>
-                  <Text style={styles.userName}>Marco</Text>
-                  <Text style={styles.userRole}>Estudiante</Text>
-                </View>
-              )}
+                  <Text
+                    style={styles.userName}
+                    numberOfLines={1}
+                  >
+                    {nombreMostrar}
+                  </Text>
 
-              {!isMobile && (
-                <Ionicons
-                  name="chevron-down-outline"
-                  size={16}
-                  color="#718096"
-                  style={styles.arrow}
-                />
+                  <Text style={styles.userRole}>
+                    Estudiante
+                  </Text>
+                </View>
               )}
             </TouchableOpacity>
           </View>
@@ -273,7 +308,7 @@ export default function StudentDashboard({ children }) {
           ]}
           showsVerticalScrollIndicator={false}
         >
-          {children || <InicioStudent />}
+          {children || <InicioStudent usuario={usuario} />}
         </ScrollView>
       </View>
 
@@ -302,6 +337,7 @@ export default function StudentDashboard({ children }) {
                     size={19}
                     color={item.active ? '#2563EB' : '#526078'}
                   />
+
                   <Text
                     style={[
                       styles.moreText,
@@ -328,6 +364,7 @@ export default function StudentDashboard({ children }) {
                   size={22}
                   color={item.active ? '#2563EB' : '#7D8798'}
                 />
+
                 <Text
                   style={[
                     styles.bottomLabel,
@@ -346,10 +383,13 @@ export default function StudentDashboard({ children }) {
               activeOpacity={0.7}
             >
               <Ionicons
-                name={mostrarMas ? 'close-outline' : 'menu-outline'}
+                name={
+                  mostrarMas ? 'close-outline' : 'menu-outline'
+                }
                 size={23}
                 color={mostrarMas ? '#2563EB' : '#7D8798'}
               />
+
               <Text
                 style={[
                   styles.bottomLabel,
@@ -472,6 +512,7 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     marginLeft: 10,
+    maxWidth: 180,
   },
   userName: {
     fontSize: 13,
@@ -482,9 +523,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#98A3B7',
     marginTop: 2,
-  },
-  arrow: {
-    marginLeft: 10,
   },
   pageScroll: {
     flex: 1,
