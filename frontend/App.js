@@ -1,23 +1,19 @@
 
 import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Platform, StatusBar } from 'react-native';
+
+import {NavigationContainer} from '@react-navigation/native';
+
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+
+import {  SafeAreaProvider,  SafeAreaView} from 'react-native-safe-area-context';
 
 import { SchoolDataProvider } from './src/context/SchoolDataContext';
 import LoginScreen from './src/components/LoginScreen';
 
-import AdminNavigator, {
-  adminLinking,
-} from './src/navigation/AdminNavigator';
-
-import TeacherNavigator, {
-  teacherLinking,
-} from './src/navigation/TeacherNavigator';
-
-import StudentNavigator, {
-  studentLinking,
-} from './src/navigation/StudentNavigator';
+import AdminNavigator, {adminLinking} from './src/navigation/AdminNavigator';
+import TeacherNavigator, {teacherLinking} from './src/navigation/TeacherNavigator';
+import StudentNavigator, { studentLinking} from './src/navigation/StudentNavigator';
 
 const Stack = createNativeStackNavigator();
 
@@ -37,52 +33,65 @@ export default function App() {
   useEffect(() => {
     if (Platform.OS === 'android') {
       import('expo-navigation-bar')
-        .then((NavigationBar) => {
-          const setBackground =
-            NavigationBar.setBackgroundColorAsync;
-          const setButtonStyle =
-            NavigationBar.setButtonStyleAsync;
+        .then(async (NavigationBar) => {
+          await NavigationBar.setPositionAsync('relative');
 
-          if (typeof setBackground === 'function') {
-            setBackground('#000000').catch(() => {});
-          }
+          await NavigationBar.setBackgroundColorAsync('#F2F5FA');
 
-          if (typeof setButtonStyle === 'function') {
-            setButtonStyle('light').catch(() => {});
-          }
+          await NavigationBar.setButtonStyleAsync('dark');
         })
-        .catch(() => {});
+        .catch((error) => {
+          console.warn('Error configurando navegación Android:', error);
+        });
     }
   }, []);
 
   return (
-    <SchoolDataProvider>
-      <NavigationContainer linking={linking}>
-        <Stack.Navigator
-          initialRouteName="Login"
-          screenOptions={{ headerShown: false }}
-        >
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-          />
+    <SafeAreaProvider>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#F2F5FA"
+        translucent={false}
+      />
 
-          <Stack.Screen
-            name="Student"
-            component={StudentNavigator}
-          />
+      <SafeAreaView
+        style={{ flex: 1, backgroundColor: '#F2F5FA' }}
+        edges={['top', 'bottom']}
+      >
+        <SchoolDataProvider>
+          <NavigationContainer linking={linking}>
+            <Stack.Navigator
+              initialRouteName="Login"
+              screenOptions={{
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: '#F2F5FA',
+                },
+              }}
+            >
+              <Stack.Screen
+                name="Login"
+                component={LoginScreen}
+              />
 
-          <Stack.Screen
-            name="Teacher"
-            component={TeacherNavigator}
-          />
+              <Stack.Screen
+                name="Student"
+                component={StudentNavigator}
+              />
 
-          <Stack.Screen
-            name="Admin"
-            component={AdminNavigator}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SchoolDataProvider>
+              <Stack.Screen
+                name="Teacher"
+                component={TeacherNavigator}
+              />
+
+              <Stack.Screen
+                name="Admin"
+                component={AdminNavigator}
+              />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </SchoolDataProvider>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }

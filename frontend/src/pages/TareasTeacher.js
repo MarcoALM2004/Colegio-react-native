@@ -1,15 +1,14 @@
-
 import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   StyleSheet,
   Alert,
   Platform,
   useWindowDimensions,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 
 const initialTasks = [
   {
@@ -60,8 +59,14 @@ const initialTasks = [
 ];
 
 const statusColors = {
-  Pendiente: { bg: "#FEE2E2", text: "#B91C1C" },
-  Calificada: { bg: "#D1FAE5", text: "#047857" },
+  Pendiente: {
+    bg: "#FEE2E2",
+    text: "#B91C1C",
+  },
+  Calificada: {
+    bg: "#D1FAE5",
+    text: "#047857",
+  },
 };
 
 export default function TareasTeacher() {
@@ -73,11 +78,13 @@ export default function TareasTeacher() {
   const [courseFilter, setCourseFilter] = useState("Todos los cursos");
   const [menuId, setMenuId] = useState(null);
 
+  // Obtener los cursos disponibles
   const courses = useMemo(
     () => [...new Set(tasks.map((task) => task.course))],
     [tasks]
   );
 
+  // Filtrar tareas
   const filteredTasks = useMemo(
     () =>
       tasks.filter((task) => {
@@ -97,18 +104,30 @@ export default function TareasTeacher() {
     [tasks, statusFilter, courseFilter]
   );
 
+  // Formatear fecha
   const formatDate = (date) => {
     if (!date) return "—";
 
     const [year, month, day] = date.split("-");
     const months = [
-      "ene", "feb", "mar", "abr", "may", "jun",
-      "jul", "ago", "sep", "oct", "nov", "dic",
+      "ene",
+      "feb",
+      "mar",
+      "abr",
+      "may",
+      "jun",
+      "jul",
+      "ago",
+      "sep",
+      "oct",
+      "nov",
+      "dic",
     ];
 
     return `${Number(day)} ${months[Number(month) - 1]} ${year}`;
   };
 
+  // Marcar tarea como calificada
   const markGraded = (id) => {
     setTasks((current) =>
       current.map((task) =>
@@ -117,31 +136,44 @@ export default function TareasTeacher() {
           : task
       )
     );
+
     setMenuId(null);
   };
 
+  // Eliminar tarea
   const deleteTask = (id) => {
     const remove = () => {
       setTasks((current) =>
         current.filter((task) => task.id !== id)
       );
+
       setMenuId(null);
     };
 
     if (Platform.OS === "web") {
-      if (globalThis.confirm("¿Eliminar esta tarea?")) remove();
+      if (globalThis.confirm("¿Eliminar esta tarea?")) {
+        remove();
+      }
     } else {
-      Alert.alert("Eliminar tarea", "¿Deseas eliminar esta tarea?", [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: remove,
-        },
-      ]);
+      Alert.alert(
+        "Eliminar tarea",
+        "¿Deseas eliminar esta tarea?",
+        [
+          {
+            text: "Cancelar",
+            style: "cancel",
+          },
+          {
+            text: "Eliminar",
+            style: "destructive",
+            onPress: remove,
+          },
+        ]
+      );
     }
   };
 
+  // Menú de acciones
   const renderActions = (task) => (
     <View style={styles.actionWrapper}>
       <TouchableOpacity
@@ -160,7 +192,9 @@ export default function TareasTeacher() {
               style={styles.actionItem}
               onPress={() => markGraded(task.id)}
             >
-              <Text style={styles.actionText}>Calificar</Text>
+              <Text style={styles.actionText}>
+                Calificar
+              </Text>
             </TouchableOpacity>
           )}
 
@@ -168,7 +202,12 @@ export default function TareasTeacher() {
             style={styles.actionItem}
             onPress={() => deleteTask(task.id)}
           >
-            <Text style={[styles.actionText, { color: "#DC2626" }]}>
+            <Text
+              style={[
+                styles.actionText,
+                { color: "#DC2626" },
+              ]}
+            >
               Eliminar
             </Text>
           </TouchableOpacity>
@@ -177,14 +216,19 @@ export default function TareasTeacher() {
     </View>
   );
 
+  // Estado de la tarea
   const renderStatus = (status) => {
-    const colors = statusColors[status] || statusColors.Pendiente;
+    const colors =
+      statusColors[status] || statusColors.Pendiente;
 
     return (
       <Text
         style={[
           styles.statusBadge,
-          { backgroundColor: colors.bg, color: colors.text },
+          {
+            backgroundColor: colors.bg,
+            color: colors.text,
+          },
         ]}
       >
         {status}
@@ -193,71 +237,145 @@ export default function TareasTeacher() {
   };
 
   return (
-    <View style={[styles.container, isMobile && styles.mobileContainer]}>
+    <View
+      style={[
+        styles.container,
+        isMobile && styles.mobileContainer,
+      ]}
+    >
+      {/* ENCABEZADO */}
       <View style={styles.header}>
         <Text style={styles.heading}>Tareas</Text>
+
         <Text style={styles.subtitle}>
           Revisa las tareas de tus cursos.
         </Text>
       </View>
 
-      <View style={[styles.filters, isMobile && styles.mobileFilters]}>
-        <View style={[styles.filterGroup, isMobile && styles.mobileFilter]}>
-          <Text style={styles.filterLabel}>Estado</Text>
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-            style={styles.select}
-          >
-            <option value="Todas">Todas</option>
-            <option value="Pendientes">Pendientes</option>
-            <option value="Calificadas">Calificadas</option>
-          </select>
+      {/* FILTROS */}
+      <View
+        style={[
+          styles.filters,
+          isMobile && styles.mobileFilters,
+        ]}
+      >
+        {/* FILTRO POR ESTADO */}
+        <View
+          style={[
+            styles.filterGroup,
+            isMobile && styles.mobileFilter,
+          ]}
+        >
+          <Text style={styles.filterLabel}>
+            Estado
+          </Text>
+
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={statusFilter}
+              onValueChange={(value) =>
+                setStatusFilter(value)
+              }
+              style={styles.picker}
+            >
+              <Picker.Item
+                label="Todas"
+                value="Todas"
+              />
+
+              <Picker.Item
+                label="Pendientes"
+                value="Pendientes"
+              />
+
+              <Picker.Item
+                label="Calificadas"
+                value="Calificadas"
+              />
+            </Picker>
+          </View>
         </View>
 
-        <View style={[styles.filterGroup, isMobile && styles.mobileFilter]}>
-          <Text style={styles.filterLabel}>Curso</Text>
-          <select
-            value={courseFilter}
-            onChange={(event) => setCourseFilter(event.target.value)}
-            style={styles.select}
-          >
-            <option value="Todos los cursos">Todos los cursos</option>
-            {courses.map((course) => (
-              <option key={course} value={course}>
-                {course}
-              </option>
-            ))}
-          </select>
+        {/* FILTRO POR CURSO */}
+        <View
+          style={[
+            styles.filterGroup,
+            isMobile && styles.mobileFilter,
+          ]}
+        >
+          <Text style={styles.filterLabel}>
+            Curso
+          </Text>
+
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={courseFilter}
+              onValueChange={(value) =>
+                setCourseFilter(value)
+              }
+              style={styles.picker}
+            >
+              <Picker.Item
+                label="Todos los cursos"
+                value="Todos los cursos"
+              />
+
+              {courses.map((course) => (
+                <Picker.Item
+                  key={course}
+                  label={course}
+                  value={course}
+                />
+              ))}
+            </Picker>
+          </View>
         </View>
       </View>
 
+      {/* LISTA MÓVIL */}
       {isMobile ? (
         <View style={styles.mobileTaskList}>
           {filteredTasks.map((task) => (
-            <View key={task.id} style={styles.taskCard}>
+            <View
+              key={task.id}
+              style={styles.taskCard}
+            >
               <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{task.title}</Text>
+                <Text style={styles.cardTitle}>
+                  {task.title}
+                </Text>
+
                 {renderActions(task)}
               </View>
 
-              <Text style={styles.cardCourse}>{task.course}</Text>
+              <Text style={styles.cardCourse}>
+                {task.course}
+              </Text>
 
               <View style={styles.cardDetails}>
                 <View style={styles.cardDetail}>
-                  <Text style={styles.detailLabel}>Entrega</Text>
+                  <Text style={styles.detailLabel}>
+                    Entrega
+                  </Text>
+
                   <Text style={styles.detailValue}>
                     {formatDate(task.dueDate)}
                   </Text>
                 </View>
 
                 <View style={styles.cardDetail}>
-                  <Text style={styles.detailLabel}>Estado</Text>
+                  <Text style={styles.detailLabel}>
+                    Estado
+                  </Text>
+
                   {renderStatus(task.status)}
                 </View>
 
                 <View style={styles.cardDetail}>
-                  <Text style={styles.detailLabel}>Entregas</Text>
+                  <Text style={styles.detailLabel}>
+                    Entregas
+                  </Text>
+
                   <Text style={styles.detailValue}>
                     {task.delivered}/{task.total}
                   </Text>
@@ -273,46 +391,120 @@ export default function TareasTeacher() {
           )}
         </View>
       ) : (
+        /* TABLA PARA PANTALLAS GRANDES */
         <View style={styles.tableContainer}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.headerCell, styles.titleColumn]}>
+            <Text
+              style={[
+                styles.headerCell,
+                styles.titleColumn,
+              ]}
+            >
               Título
             </Text>
-            <Text style={[styles.headerCell, styles.courseColumn]}>
+
+            <Text
+              style={[
+                styles.headerCell,
+                styles.courseColumn,
+              ]}
+            >
               Curso
             </Text>
-            <Text style={[styles.headerCell, styles.dateColumn]}>
+
+            <Text
+              style={[
+                styles.headerCell,
+                styles.dateColumn,
+              ]}
+            >
               Fecha de entrega
             </Text>
-            <Text style={[styles.headerCell, styles.statusColumn]}>
+
+            <Text
+              style={[
+                styles.headerCell,
+                styles.statusColumn,
+              ]}
+            >
               Estado
             </Text>
-            <Text style={[styles.headerCell, styles.deliveryColumn]}>
+
+            <Text
+              style={[
+                styles.headerCell,
+                styles.deliveryColumn,
+              ]}
+            >
               Entregas
             </Text>
-            <Text style={[styles.headerCell, styles.actionsColumn]}>
+
+            <Text
+              style={[
+                styles.headerCell,
+                styles.actionsColumn,
+              ]}
+            >
               Acciones
             </Text>
           </View>
 
           {filteredTasks.map((task) => (
-            <View key={task.id} style={styles.tableRow}>
-              <Text style={[styles.cell, styles.titleColumn]}>
+            <View
+              key={task.id}
+              style={styles.tableRow}
+            >
+              <Text
+                style={[
+                  styles.cell,
+                  styles.titleColumn,
+                ]}
+              >
                 {task.title}
               </Text>
-              <Text style={[styles.cell, styles.courseColumn]}>
+
+              <Text
+                style={[
+                  styles.cell,
+                  styles.courseColumn,
+                ]}
+              >
                 {task.course}
               </Text>
-              <Text style={[styles.cell, styles.dateColumn]}>
+
+              <Text
+                style={[
+                  styles.cell,
+                  styles.dateColumn,
+                ]}
+              >
                 {formatDate(task.dueDate)}
               </Text>
-              <View style={[styles.statusColumn, styles.statusCell]}>
+
+              <View
+                style={[
+                  styles.statusColumn,
+                  styles.statusCell,
+                ]}
+              >
                 {renderStatus(task.status)}
               </View>
-              <Text style={[styles.cell, styles.deliveryColumn]}>
+
+              <Text
+                style={[
+                  styles.cell,
+                  styles.deliveryColumn,
+                ]}
+              >
                 {task.delivered}/{task.total}
               </Text>
-              <View style={[styles.actionsColumn, styles.actionsCell]}>
+
+              <View
+                style={[
+                  styles.actionsColumn,
+                  styles.actionsCell,
+                ]}
+              >
                 {renderActions(task)}
               </View>
             </View>
@@ -326,6 +518,7 @@ export default function TareasTeacher() {
         </View>
       )}
 
+      {/* TOTAL DE TAREAS */}
       <Text style={styles.resultCount}>
         {filteredTasks.length} tarea(s)
       </Text>
@@ -392,16 +585,21 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
 
-  select: {
+  pickerContainer: {
     width: "100%",
     minWidth: 0,
-    padding: 9,
-    border: "1px solid #DCE3EC",
-    borderRadius: 7,
     backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DCE3EC",
+    borderRadius: 7,
+    overflow: "hidden",
+    justifyContent: "center",
+  },
+
+  picker: {
+    width: "100%",
+    height: 48,
     color: "#475569",
-    fontSize: 12,
-    boxSizing: "border-box",
   },
 
   tableContainer: {
@@ -526,7 +724,10 @@ const styles = StyleSheet.create({
     shadowColor: "#000000",
     shadowOpacity: 0.12,
     shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
+    shadowOffset: {
+      width: 0,
+      height: 3,
+    },
   },
 
   actionItem: {

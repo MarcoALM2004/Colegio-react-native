@@ -1,12 +1,9 @@
 import { Platform } from 'react-native';
 
-export const API_BASE_URL =
-  Platform.OS === 'android'
-    ? 'http://10.0.2.2:8080'
-    : 'http://localhost:8080';
+export const API_URL = 'http://192.168.100.5:8080';
 
 export async function apiRequest(endpoint, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
       Accept: 'application/json',

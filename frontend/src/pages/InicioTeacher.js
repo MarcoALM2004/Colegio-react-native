@@ -273,7 +273,7 @@ export default function InicioTeacher({ usuario = {} }) {
         ))}
       </View>
 
-      <View style={[styles.columnas, movil && styles.columnaMovil]}>
+      <View style={[ styles.columnas, movil && styles.columnaMovil ]}>
         <View style={styles.columna}>
           <Panel titulo="Próximas clases" accion="Ver horario">
             {clases.map((item, i) => (
@@ -421,10 +421,14 @@ const styles = StyleSheet.create({
   },
   columnaMovil: {
     flexDirection: 'column',
+    width: '100%',
+    alignSelf: 'stretch',
   },
   columna: {
     flex: 1,
+    width: '100%',
     minWidth: 0,
+    alignSelf: 'stretch',
     gap: 16,
   },
   panel: {
@@ -497,7 +501,9 @@ const styles = StyleSheet.create({
   },
   derechaFila: {
     alignItems: 'flex-end',
+    minWidth: 82,
     maxWidth: 100,
+    flexShrink: 0,
     gap: 6,
   },
   estado: {
