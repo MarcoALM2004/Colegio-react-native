@@ -21,7 +21,22 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-status-bar"
+      "expo-status-bar",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "EduConnect necesita acceder a tu cámara para tomar y enviar fotografías.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "EduConnect necesita acceder a tu cámara para tomar y enviar fotografías por mensajes.",
+          "photosPermission": "EduConnect necesita acceder a tus fotografías para compartir imágenes."
+        }
+      ],
+      "expo-font"
     ]
   }
 }

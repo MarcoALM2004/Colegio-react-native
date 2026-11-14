@@ -87,7 +87,7 @@ export default function StudentNavigator({ route }) {
       <Stack.Screen name="MensajesStudent">
         {({ navigation }) => (
           <StudentDashboard usuario={usuario}>
-            <MensajesStudent navigation={navigation} />
+            <MensajesStudent navigation={navigation} usuario={usuario}/>
           </StudentDashboard>
         )}
       </Stack.Screen>

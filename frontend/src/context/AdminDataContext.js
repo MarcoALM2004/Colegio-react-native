@@ -22,6 +22,7 @@ import {
   listarUsuariosAdmin,
   crearUsuarioAdmin,
   actualizarUsuarioAdmin,
+  eliminarUsuarioAdmin,
 } from '../service/adminUsuariosService';
 
 import {
@@ -29,7 +30,16 @@ import {
   actualizarPerfilAdmin,
 } from '../service/adminPerfilService';
 
-import { eliminarUsuarioAdmin } from '../service/adminUsuariosService';
+import {
+  listarCursosAdmin,
+  crearCursoAdmin,
+  actualizarCursoAdmin,
+  eliminarCursoAdmin,
+  listarEstudiantesCursoAdmin,
+  listarEstudiantesDisponiblesCursoAdmin,
+  matricularEstudiantesCursoAdmin,
+  retirarEstudianteCursoAdmin,
+} from '../service/adminCursosService';
 
 const AdminDataContext = createContext(null);
 
@@ -54,7 +64,8 @@ const PREFIJO_CODIGO = {
 export function AdminDataProvider({ children, codigoUsuario }) {
   const [profile, setProfile] = useState(adminProfile);
   const [users, setUsers] = useState(initialUsers);
-  const [courses, setCourses] = useState(initialCourses);
+  const [courses, setCourses] = useState([]);
+  const [estudiantesPorCurso, setEstudiantesPorCurso] = useState({});
   const [library, setLibrary] = useState(initialLibrary);
   const [events, setEvents] = useState(initialEvents);
   const [conversations, setConversations] = useState(initialConversations);
@@ -105,7 +116,7 @@ export function AdminDataProvider({ children, codigoUsuario }) {
     ]);
   };
 
-  //-------------mapeo roles t datos----------
+  // ---------- Conversión de datos del backend ----------
   const rolBackendAFrontend = (rol) => {
     switch ((rol || '').toUpperCase()) {
       case 'ALUMNO':
@@ -132,40 +143,80 @@ export function AdminDataProvider({ children, codigoUsuario }) {
     activo: u.activo,
   });
 
-    //-----
-    useEffect(() => {
-      let cancelado = false;
+  const normalizarCurso = (c) => ({
+    ...c,
+    id: c.id,
+    codigo:
+      c.codigo ||
+      `${c.nivel === 'Primaria' ? 'PRI' : 'SEC'}-${String(
+        c.grado || ''
+      ).replace('°', '')}${c.seccion || ''}`,
+    nombre: c.nombre || '',
+    docenteId: c.docenteId ?? null,
+    tono: c.color || 'blue',
+    color: c.color || 'blue',
+    anio: c.anio || new Date().getFullYear(),
+    cantidadEstudiantes: Number(c.cantidadEstudiantes || 0),
+    horario: Array.isArray(c.horario) ? c.horario : [],
+  });
 
-      const cargarUsuarios = async () => {
-        try {
-          const datos = await listarUsuariosAdmin();
+  // ---------- Cargar usuarios ----------
+  useEffect(() => {
+    let cancelado = false;
 
-          if (!cancelado) {
-            setUsers(datos.map(usuarioBackendAFrontend));
-          }
-        } catch (error) {
-          console.error('Error al cargar usuarios:', error.message);
+    const cargarUsuarios = async () => {
+      try {
+        const datos = await listarUsuariosAdmin();
+
+        if (!cancelado) {
+          setUsers(datos.map(usuarioBackendAFrontend));
         }
-      };
+      } catch (error) {
+        console.error('Error al cargar usuarios:', error.message);
+      }
+    };
 
-      cargarUsuarios();
+    cargarUsuarios();
 
-      return () => {
-        cancelado = true;
-      };
-    }, []);
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
-  //-----------------------------
+  // ---------- Cargar cursos desde el backend ----------
+  useEffect(() => {
+    let cancelado = false;
+
+    const cargarCursos = async () => {
+      try {
+        const datos = await listarCursosAdmin();
+
+        if (!cancelado) {
+          setCourses(datos.map(normalizarCurso));
+        }
+      } catch (error) {
+        console.error('Error al cargar cursos:', error.message);
+      }
+    };
+
+    cargarCursos();
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   const value = useMemo(() => {
     // ---------- Consultas ----------
-    const getUser = (id) => users.find((u) => u.id === id);
+    const getUser = (id) =>
+      users.find((u) => String(u.id) === String(id));
 
-    const getCourse = (id) => courses.find((c) => c.id === id);
+    const getCourse = (id) =>
+      courses.find((c) => String(c.id) === String(id));
 
     const courseName = (course) =>
       course
-        ? `${course.grado} ${course.nivel} ${course.seccion}`
+        ? `${course.nombre || 'Curso'} — ${course.grado} ${course.nivel} ${course.seccion}`
         : 'Sin asignar';
 
     const courseShortName = (course) =>
@@ -176,15 +227,56 @@ export function AdminDataProvider({ children, codigoUsuario }) {
         : '';
 
     const studentsInCourse = (courseId) =>
-      users.filter(
-        (u) =>
-          u.rol === ROLES.ESTUDIANTE &&
-          u.cursoId === courseId
-      );
+      estudiantesPorCurso[String(courseId)] || [];
 
     const courseStudentCount = (course) =>
-      course.estudiantesBase + studentsInCourse(course.id).length;
+      Number(
+        course?.cantidadEstudiantes ??
+          studentsInCourse(course?.id).length ??
+          0
+      );
 
+    // ---------- Estudiantes de cursos ----------
+    const loadCourseStudents = async (courseId) => {
+      const data = await listarEstudiantesCursoAdmin(courseId);
+      const mapped = data.map(usuarioBackendAFrontend);
+
+      setEstudiantesPorCurso((prev) => ({
+        ...prev,
+        [String(courseId)]: mapped,
+      }));
+
+      return mapped;
+    };
+
+    const loadAvailableStudents = async (courseId, busqueda = '') => {
+      const data = await listarEstudiantesDisponiblesCursoAdmin(
+        courseId,
+        busqueda
+      );
+
+      return data.map(usuarioBackendAFrontend);
+    };
+
+    const refreshCourses = async () => {
+      const data = await listarCursosAdmin();
+      setCourses(data.map(normalizarCurso));
+      return data;
+    };
+
+    const enrollStudents = async (courseId, studentIds) => {
+      await matricularEstudiantesCursoAdmin(courseId, studentIds);
+      await loadCourseStudents(courseId);
+      await refreshCourses();
+    };
+
+    const removeStudentFromCourse = async (courseId, studentId) => {
+      await retirarEstudianteCursoAdmin(courseId, studentId);
+      await loadCourseStudents(courseId);
+      await refreshCourses();
+    };
+
+    // ---------- Estadísticas ----------
     const stats = {
       estudiantes: courses.reduce(
         (acc, c) => acc + courseStudentCount(c),
@@ -215,9 +307,12 @@ export function AdminDataProvider({ children, codigoUsuario }) {
         correo: data.correo.trim().toLowerCase(),
         dni: data.documento,
         telefono: data.telefono || null,
-        grado: data.rol === ROLES.ESTUDIANTE ? data.grado : null,
-        seccion: data.rol === ROLES.ESTUDIANTE ? data.seccion : null,
-        especialidad: data.rol === ROLES.DOCENTE ? data.detalle : null,
+        grado:
+          data.rol === ROLES.ESTUDIANTE ? data.grado : null,
+        seccion:
+          data.rol === ROLES.ESTUDIANTE ? data.seccion : null,
+        especialidad:
+          data.rol === ROLES.DOCENTE ? data.detalle : null,
         password: data.password,
       });
 
@@ -229,24 +324,33 @@ export function AdminDataProvider({ children, codigoUsuario }) {
 
     const updateUser = async (id, data) => {
       const existente = users.find(
-        (u) => String(u.id) === String(id) || u.codigo === id
+        (u) =>
+          String(u.id) === String(id) || u.codigo === id
       );
 
       if (!existente) {
-        throw new Error('No se encontró el usuario que deseas editar.');
+        throw new Error(
+          'No se encontró el usuario que deseas editar.'
+        );
       }
 
-      const actualizado = await actualizarUsuarioAdmin(existente.codigo, {
-        nombres: data.nombres.trim(),
-        apellidos: data.apellidos.trim(),
-        correo: data.correo.trim().toLowerCase(),
-        dni: data.documento,
-        telefono: data.telefono || null,
-        grado: data.rol === ROLES.ESTUDIANTE ? data.grado : null,
-        seccion: data.rol === ROLES.ESTUDIANTE ? data.seccion : null,
-        especialidad: data.rol === ROLES.DOCENTE ? data.detalle : null,
-        password: data.password || null,
-      });
+      const actualizado = await actualizarUsuarioAdmin(
+        existente.codigo,
+        {
+          nombres: data.nombres.trim(),
+          apellidos: data.apellidos.trim(),
+          correo: data.correo.trim().toLowerCase(),
+          dni: data.documento,
+          telefono: data.telefono || null,
+          grado:
+            data.rol === ROLES.ESTUDIANTE ? data.grado : null,
+          seccion:
+            data.rol === ROLES.ESTUDIANTE ? data.seccion : null,
+          especialidad:
+            data.rol === ROLES.DOCENTE ? data.detalle : null,
+          password: data.password || null,
+        }
+      );
 
       const usuario = usuarioBackendAFrontend(actualizado);
 
@@ -265,8 +369,6 @@ export function AdminDataProvider({ children, codigoUsuario }) {
       return usuario;
     };
 
-    // ---------- Acciones de usuarios ----------
-
     const toggleUserActive = (id) => {
       setUsers((prev) =>
         prev.map((u) =>
@@ -276,7 +378,6 @@ export function AdminDataProvider({ children, codigoUsuario }) {
         )
       );
     };
-
 
     const deleteUser = async (id) => {
       const usuario = users.find(
@@ -301,7 +402,6 @@ export function AdminDataProvider({ children, codigoUsuario }) {
       );
     };
 
-
     const resetPassword = (id) => {
       const usuario = users.find(
         (u) =>
@@ -317,20 +417,27 @@ export function AdminDataProvider({ children, codigoUsuario }) {
       );
     };
 
-    // ---------- Cursos ----------
-    const addCourse = (data) => {
-      const course = {
-        id: nuevoId('c'),
-        estudiantesBase: 0,
-        anio: new Date().getFullYear(),
-        horario: [],
-        ...data,
-        codigo: `${
-          data.nivel === 'Primaria' ? 'PRI' : 'SEC'
-        }-${parseInt(data.grado, 10)}${data.seccion}`,
+    // ---------- Cursos conectados al backend ----------
+    const addCourse = async (data) => {
+      const payload = {
+        nombre: (data.nombre ?? actual?.nombre ?? '').trim(),
+        nivel: data.nivel,
+        grado: data.grado,
+        seccion: data.seccion,
+        docenteId: data.docenteId || null,
+        descripcion: data.descripcion || '',
+        color: data.tono || data.color || 'blue',
       };
 
-      setCourses((prev) => [...prev, course]);
+      const creado = await crearCursoAdmin(payload);
+      await refreshCourses();
+
+      const course = normalizarCurso({
+        ...creado,
+        nombre: creado.nombre || payload.nombre,
+        docenteId: creado.docenteId ?? payload.docenteId,
+        color: creado.color || payload.color,
+      });
 
       registrarActividad(
         'school-outline',
@@ -341,36 +448,52 @@ export function AdminDataProvider({ children, codigoUsuario }) {
       return course;
     };
 
-    const updateCourse = (id, data) => {
-      setCourses((prev) =>
-        prev.map((c) => {
-          if (c.id !== id) return c;
+    const updateCourse = async (id, data) => {
+      const actual = getCourse(id);
 
-          const merged = { ...c, ...data };
+      const payload = {
+        nombre: data.nombre.trim(),
+        nivel: data.nivel ?? actual?.nivel,
+        grado: data.grado ?? actual?.grado,
+        seccion: data.seccion ?? actual?.seccion,
+        docenteId:
+          data.docenteId === undefined
+            ? actual?.docenteId ?? null
+            : data.docenteId,
+        descripcion:
+          data.descripcion ?? actual?.descripcion ?? '',
+        color:
+          data.tono ||
+          data.color ||
+          actual?.color ||
+          'blue',
+      };
 
-          merged.codigo = `${
-            merged.nivel === 'Primaria' ? 'PRI' : 'SEC'
-          }-${parseInt(merged.grado, 10)}${merged.seccion}`;
-
-          return merged;
-        })
-      );
+      await actualizarCursoAdmin(id, payload);
+      await refreshCourses();
 
       registrarActividad(
         'create-outline',
         'Curso actualizado',
-        courseName({ ...getCourse(id), ...data })
+        courseName({
+          ...actual,
+          ...payload,
+        })
       );
     };
 
-    const deleteCourse = (id) => {
-      setCourses((prev) => prev.filter((c) => c.id !== id));
+    const deleteCourse = async (id) => {
+      await eliminarCursoAdmin(id);
 
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.cursoId === id ? { ...u, cursoId: null } : u
-        )
+      setCourses((prev) =>
+        prev.filter((c) => String(c.id) !== String(id))
       );
+
+      setEstudiantesPorCurso((prev) => {
+        const copia = { ...prev };
+        delete copia[String(id)];
+        return copia;
+      });
     };
 
     // ---------- Biblioteca ----------
@@ -393,7 +516,9 @@ export function AdminDataProvider({ children, codigoUsuario }) {
     };
 
     const deleteResource = (id) => {
-      setLibrary((prev) => prev.filter((b) => b.id !== id));
+      setLibrary((prev) =>
+        prev.filter((b) => b.id !== id)
+      );
     };
 
     const registerDownload = (id) => {
@@ -419,7 +544,9 @@ export function AdminDataProvider({ children, codigoUsuario }) {
     };
 
     const deleteEvent = (id) => {
-      setEvents((prev) => prev.filter((e) => e.id !== id));
+      setEvents((prev) =>
+        prev.filter((e) => e.id !== id)
+      );
     };
 
     // ---------- Mensajes ----------
@@ -512,8 +639,6 @@ export function AdminDataProvider({ children, codigoUsuario }) {
             : data,
       }));
 
-      
-
     return {
       profile,
       users,
@@ -531,6 +656,10 @@ export function AdminDataProvider({ children, codigoUsuario }) {
       courseShortName,
       studentsInCourse,
       courseStudentCount,
+      loadCourseStudents,
+      loadAvailableStudents,
+      enrollStudents,
+      removeStudentFromCourse,
 
       addUser,
       updateUser,
@@ -561,6 +690,7 @@ export function AdminDataProvider({ children, codigoUsuario }) {
     profile,
     users,
     courses,
+    estudiantesPorCurso,
     library,
     events,
     conversations,
