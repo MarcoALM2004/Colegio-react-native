@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "my-app-colegio",
@@ -10,18 +11,32 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.anonymous.myappcolegio",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-status-bar",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#2563EB",
+          "defaultChannel": "educonnect"
+        }
+      ],
       [
         "expo-camera",
         {
@@ -37,6 +52,12 @@
         }
       ],
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2dc7ee8b-df3d-40a4-8ba6-2bc26a1179a1"
+      }
+    },
+    "owner": "lmarco123s-team"
   }
 }

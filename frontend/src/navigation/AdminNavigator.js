@@ -20,6 +20,7 @@ import ConfiguracionAdmin from '../pages/admin/ConfiguracionAdmin';
 import PerfilAdmin from '../pages/admin/PerfilAdmin';
 import PerfilFormAdmin from '../pages/admin/PerfilFormAdmin';
 import MasAdmin from '../pages/admin/MasAdmin';
+import Notificaciones from '../pages/Notificaciones';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +44,7 @@ export const adminLinking = {
     AdminPerfil: 'perfil',
     AdminPerfilForm: 'perfil/editar',
     AdminMas: 'mas',
+    Notificaciones: 'notificaciones',
   },
 };
 
@@ -82,6 +84,8 @@ export default function AdminNavigator({ route }) {
         {/* Perfil del administrador */}
         <Stack.Screen name="AdminPerfil" component={PerfilAdmin} />
         <Stack.Screen name="AdminPerfilForm" component={PerfilFormAdmin} />
+        <Stack.Screen name="Notificaciones" component={Notificaciones} initialParams={{ usuario }} />
+        
       </Stack.Navigator>
     </AdminDataProvider>
   );

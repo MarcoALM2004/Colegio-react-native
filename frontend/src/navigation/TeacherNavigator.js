@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -11,6 +10,7 @@ import CalendarioTeacher from '../pages/CalendarioTeacher';
 import MensajesTeacher from '../pages/MensajesTeacher';
 import ConfiguracionTeacher from '../pages/ConfiguracionTeacher';
 import PerfilTeacher from '../pages/PerfilTeacher';
+import Notificaciones from '../pages/Notificaciones';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,6 +26,7 @@ export const teacherLinking = {
     CalendarioTeacher: 'calendario',
     MensajesTeacher: 'mensajes',
     ConfiguracionTeacher: 'configuracion',
+    Notificaciones: 'notificaciones',
   },
 };
 
@@ -79,13 +80,16 @@ export default function TeacherNavigator({ route }) {
         )}
       </Stack.Screen>
 
-    <Stack.Screen name="CalificacionesTeacher">
-      {({ navigation }) => (
-        <TeacherDashboard usuario={usuario}>
-          <CalificacionesTeacher navigation={navigation} usuario={usuario} />
-        </TeacherDashboard>
-      )}
-    </Stack.Screen>
+      <Stack.Screen name="CalificacionesTeacher">
+        {({ navigation }) => (
+          <TeacherDashboard usuario={usuario}>
+            <CalificacionesTeacher
+              navigation={navigation}
+              usuario={usuario}
+            />
+          </TeacherDashboard>
+        )}
+      </Stack.Screen>
 
       <Stack.Screen name="CalendarioTeacher">
         {({ navigation }) => (
@@ -98,7 +102,10 @@ export default function TeacherNavigator({ route }) {
       <Stack.Screen name="MensajesTeacher">
         {({ navigation }) => (
           <TeacherDashboard usuario={usuario}>
-            <MensajesTeacher navigation={navigation} usuario={usuario} />
+            <MensajesTeacher
+              navigation={navigation}
+              usuario={usuario}
+            />
           </TeacherDashboard>
         )}
       </Stack.Screen>
@@ -107,6 +114,17 @@ export default function TeacherNavigator({ route }) {
         {({ navigation }) => (
           <TeacherDashboard usuario={usuario}>
             <ConfiguracionTeacher navigation={navigation} />
+          </TeacherDashboard>
+        )}
+      </Stack.Screen>
+
+      <Stack.Screen name="Notificaciones">
+        {({ navigation }) => (
+          <TeacherDashboard usuario={usuario}>
+            <Notificaciones
+              navigation={navigation}
+              usuario={usuario}
+            />
           </TeacherDashboard>
         )}
       </Stack.Screen>

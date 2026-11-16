@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { login } from '../service/authService';
+import { registrarNotificaciones } from '../service/notificacionService';
 import logoLogin from '../assets/logo-login.jpg';
 
 export default function LoginScreen({ navigation }) {
@@ -44,6 +45,15 @@ export default function LoginScreen({ navigation }) {
         .toUpperCase();
 
       const datosUsuario = resultadoLogin.usuario;
+      
+      if (datosUsuario?.id) {
+        registrarNotificaciones(datosUsuario.id).catch((error) => {
+          console.warn(
+            'No se pudo registrar el dispositivo para notificaciones:',
+            error
+          );
+        });
+      }
 
       if (!datosUsuario) {
         setError('El servidor no devolvió los datos del usuario.');

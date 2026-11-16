@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react'; 
+
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
+import { obtenerNoLeidas } from '../service/notificacionService';
 
 import logoAlcantay from '../image/logosalcantay.png';
 import { useAdminData } from '../context/AdminDataContext';
@@ -53,7 +56,37 @@ const PARENT_ROUTE = {
 export default function AdminDashboard({ children, variant = 'main', title, headerRight }) {
   const navigation = useNavigation();
   const route = useRoute();
-  const { profile, stats } = useAdminData();
+  const { profile } = useAdminData();
+  const [notificacionesNoLeidas, setNotificacionesNoLeidas] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      let activo = true;
+
+      const cargarNoLeidas = async () => {
+        const id = Number(profile?.id);
+        if (!id) {
+          if (activo) setNotificacionesNoLeidas(0);
+          return;
+        }
+
+        try {
+          const total = await obtenerNoLeidas(id);
+          if (activo) setNotificacionesNoLeidas(Number(total) || 0);
+        } catch (error) {
+          console.warn('No se pudo consultar las notificaciones:', error.message);
+        }
+      };
+
+      cargarNoLeidas();
+      const suscripcion = Notifications.addNotificationReceivedListener(cargarNoLeidas);
+
+      return () => {
+        activo = false;
+        suscripcion.remove();
+      };
+    }, [profile?.id])
+  );
 
   const { width } = useWindowDimensions();
   const isMobile = width < breakpoints.mobile;
@@ -98,9 +131,18 @@ export default function AdminDashboard({ children, variant = 'main', title, head
           resizeMode="contain"
         />
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => irASeccion('AdminMensajes')}>
-            <Ionicons name="notifications-outline" size={22} color="#718096" />
-            {stats.mensajesNoLeidos > 0 && <View style={styles.dot} />}
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('Notificaciones')}
+          >
+            <Ionicons
+              name="notifications-outline"
+              size={22}
+              color="#718096"
+            />
+            {notificacionesNoLeidas > 0 && (
+              <View style={styles.dot} />
+            )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.userArea} onPress={() => navigation.navigate('AdminPerfil')}>
             <Avatar nombres={profile.nombres} apellidos={profile.apellidos} tone="blue" size={38} />

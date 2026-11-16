@@ -1,18 +1,27 @@
-
-import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const API_URL = 'http://192.168.100.5:8080';
 
+export const TOKEN_KEY = '@educonnect_token';
+
 export async function apiRequest(endpoint, options = {}) {
+  const token = await AsyncStorage.getItem(TOKEN_KEY);
+
   const headers = {
     Accept: 'application/json',
     ...options.headers,
   };
 
-  // FormData establece automáticamente el Content-Type
-  // y el boundary necesario para multipart/form-data.
-  if (!(options.body instanceof FormData)) {
+  const esFormData =
+    typeof FormData !== 'undefined' &&
+    options.body instanceof FormData;
+
+  if (!esFormData && options.body !== undefined) {
     headers['Content-Type'] = 'application/json';
+  }
+
+  if (token && endpoint !== '/login') {
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -43,4 +52,3 @@ export async function apiRequest(endpoint, options = {}) {
 
   return data;
 }
-

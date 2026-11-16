@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,9 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
+import { obtenerNoLeidas } from '../service/notificacionService';
 
 import InicioStudent from '../pages/InicioStudent';
 import logoAlcantay from '../image/logosalcantay.png';
@@ -19,6 +21,7 @@ export default function StudentDashboard({ children, usuario: usuarioProp }) {
   const route = useRoute();
   const { width } = useWindowDimensions();
   const [mostrarMas, setMostrarMas] = useState(false);
+  const [notificacionesNoLeidas, setNotificacionesNoLeidas] = useState(0);
 
   const isMobile = width < 600;
   const isTablet = width >= 600 && width < 1000;
@@ -31,6 +34,35 @@ export default function StudentDashboard({ children, usuario: usuarioProp }) {
     route.params?.usuario ||
     route.params?.user ||
     {};
+
+  useFocusEffect(
+    useCallback(() => {
+      let activo = true;
+
+      const cargarNoLeidas = async () => {
+        const id = Number(usuario?.id);
+        if (!id) {
+          if (activo) setNotificacionesNoLeidas(0);
+          return;
+        }
+
+        try {
+          const total = await obtenerNoLeidas(id);
+          if (activo) setNotificacionesNoLeidas(Number(total) || 0);
+        } catch (error) {
+          console.warn('No se pudo consultar las notificaciones:', error.message);
+        }
+      };
+
+      cargarNoLeidas();
+      const suscripcion = Notifications.addNotificationReceivedListener(cargarNoLeidas);
+
+      return () => {
+        activo = false;
+        suscripcion.remove();
+      };
+    }, [usuario?.id])
+  );
 
   const nombres =
     usuario.nombres ||
@@ -252,12 +284,16 @@ export default function StudentDashboard({ children, usuario: usuarioProp }) {
               style={styles.iconButton}
               activeOpacity={0.7}
               accessibilityLabel="Notificaciones"
+              onPress={() => navigation.navigate('Notificaciones')}
             >
               <Ionicons
                 name="notifications-outline"
                 size={21}
                 color="#526078"
               />
+              {notificacionesNoLeidas > 0 && (
+                <View style={styles.notificationDot} />
+              )}
             </TouchableOpacity>
 
             {/* USUARIO: SIN FLECHITA DESPLEGABLE */}
@@ -492,6 +528,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#EF4444',
+    borderWidth: 1.5,
+    borderColor: '#DBF9FF',
   },
   userArea: {
     flexDirection: 'row',

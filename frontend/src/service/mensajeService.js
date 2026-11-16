@@ -1,4 +1,6 @@
-import { apiRequest, API_URL } from '../config/api';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiRequest, API_URL, TOKEN_KEY } from '../config/api';
 import * as FileSystem from 'expo-file-system/legacy';
 
 // Obtener contactos del usuario.
@@ -9,10 +11,7 @@ export async function listarContactos(usuarioId) {
 }
 
 // Obtener historial de una conversación.
-export async function obtenerConversacion(
-  usuarioId,
-  contactoId
-) {
+export async function obtenerConversacion(usuarioId, contactoId) {
   return apiRequest(
     `/api/mensajes/conversacion?usuarioId=${encodeURIComponent(usuarioId)}&contactoId=${encodeURIComponent(contactoId)}`
   );
@@ -36,7 +35,7 @@ export async function enviarMensaje({
   });
 }
 
-// Enviar fotografía mediante el sistema nativo de Expo.
+// Enviar fotografía con autenticación JWT.
 export async function enviarImagen({
   remitenteId,
   destinatarioId,
@@ -50,38 +49,32 @@ export async function enviarImagen({
     throw new Error('No se seleccionó ninguna fotografía.');
   }
 
-  const nombreArchivo =
-    imagen.fileName ||
-    `fotografia-${Date.now()}.jpg`;
+  const token = await AsyncStorage.getItem(TOKEN_KEY);
 
-  const mimeType =
-    imagen.mimeType ||
-    'image/jpeg';
+  if (!token) {
+    throw new Error('Tu sesión ha expirado. Inicia sesión nuevamente.');
+  }
 
-  const url = `${API_URL}/api/mensajes/imagen`;
+  const mimeType = imagen.mimeType || 'image/jpeg';
 
   let respuesta;
 
   try {
     respuesta = await FileSystem.uploadAsync(
-      url,
+      `${API_URL}/api/mensajes/imagen`,
       imagen.uri,
       {
         httpMethod: 'POST',
         uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-
-        // Debe coincidir con @RequestParam("archivo")
-        // del controlador Spring Boot.
         fieldName: 'archivo',
-
         mimeType,
         parameters: {
           remitenteId: String(remitenteId),
           destinatarioId: String(destinatarioId),
         },
-
         headers: {
           Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
         },
       }
     );
@@ -118,10 +111,7 @@ export async function enviarImagen({
 }
 
 // Marcar mensaje como leído.
-export async function marcarMensajeLeido(
-  mensajeId,
-  usuarioId
-) {
+export async function marcarMensajeLeido(mensajeId, usuarioId) {
   return apiRequest(
     `/api/mensajes/${mensajeId}/leido?usuarioId=${encodeURIComponent(usuarioId)}`,
     {
