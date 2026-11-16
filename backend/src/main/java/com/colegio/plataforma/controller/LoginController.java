@@ -5,6 +5,7 @@ import com.colegio.plataforma.data.LoginRequest;
 import com.colegio.plataforma.data.LoginResponse;
 import com.colegio.plataforma.models.Usuario;
 import com.colegio.plataforma.service.LoginService;
+import com.colegio.plataforma.service.JwtService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -19,9 +20,13 @@ import java.util.Map;
 public class LoginController {
 
     private final LoginService loginService;
+    private final JwtService jwtService;
 
-    public LoginController(LoginService loginService) {
+    public LoginController(
+            LoginService loginService,
+            JwtService jwtService) {
         this.loginService = loginService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -41,10 +46,13 @@ public class LoginController {
                     ));
         }
 
+        String token = jwtService.generarToken(usuario);
+
         return ResponseEntity.ok(
                 new LoginResponse(
                         "Inicio de sesión correcto",
-                        usuario
+                        usuario,
+                        token
                 )
         );
     }
