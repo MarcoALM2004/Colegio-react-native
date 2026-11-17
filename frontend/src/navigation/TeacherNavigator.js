@@ -56,7 +56,10 @@ export default function TeacherNavigator({ route }) {
       <Stack.Screen name="CursosTeacher">
         {({ navigation }) => (
           <TeacherDashboard usuario={usuario}>
-            <CursosTeacher navigation={navigation} />
+            <CursosTeacher
+              navigation={navigation}
+              usuario={usuario}
+            />
           </TeacherDashboard>
         )}
       </Stack.Screen>

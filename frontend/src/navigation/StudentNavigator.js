@@ -1,4 +1,4 @@
-  import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import StudentDashboard from '../components/StudentDashboard';
@@ -58,7 +58,10 @@ export default function StudentNavigator({ route }) {
       <Stack.Screen name="CursosStudent">
         {({ navigation }) => (
           <StudentDashboard usuario={usuario}>
-            <CursosStudent navigation={navigation} />
+            <CursosStudent
+              navigation={navigation}
+              usuario={usuario}
+            />
           </StudentDashboard>
         )}
       </Stack.Screen>

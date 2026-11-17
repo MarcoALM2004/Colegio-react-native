@@ -45,6 +45,7 @@ public class MensajeRepository {
      *
      * ADMIN <-> DOCENTE:
      * No necesitan compartir cursos.
+     * QUIERO QUESO >:v
      */
     public boolean existeRelacionPermitida(
             Long usuarioId,

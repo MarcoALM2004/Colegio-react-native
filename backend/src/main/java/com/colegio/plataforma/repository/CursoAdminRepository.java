@@ -35,6 +35,7 @@ public class CursoAdminRepository {
                 c.docente_id,
                 c.descripcion,
                 c.color,
+                c.icono,
                 c.anio_escolar,
                 CONCAT(u.nombres, ' ', u.apellidos) AS docente,
                 (
@@ -64,6 +65,7 @@ public class CursoAdminRepository {
                 rs.getString("docente"),
                 rs.getString("descripcion"),
                 rs.getString("color"),
+                rs.getString("icono"),
                 rs.getInt("anio_escolar"),
                 rs.getInt("cantidad_estudiantes")
             )
@@ -130,10 +132,11 @@ public class CursoAdminRepository {
                 anio_escolar,
                 docente_id,
                 activo,
-                color
+                color,
+                icono
             )
             VALUES (
-                ?, ?, ?, ?, ?, YEAR(CURDATE()), ?, 1, ?
+                ?, ?, ?, ?, ?, YEAR(CURDATE()), ?, 1, ?, ?
             )
             """,
             datos.nombre().trim(),
@@ -142,7 +145,8 @@ public class CursoAdminRepository {
             datos.grado(),
             datos.seccion(),
             datos.docenteId(),
-            datos.color()
+            datos.color(),
+            datos.icono()
         );
 
         return jdbc.queryForObject(
@@ -164,7 +168,8 @@ public class CursoAdminRepository {
                 grado = ?,
                 seccion = ?,
                 docente_id = ?,
-                color = ?
+                color = ?,
+                icono = ?
             WHERE id = ?
               AND activo = 1
             """,
@@ -175,6 +180,7 @@ public class CursoAdminRepository {
             datos.seccion(),
             datos.docenteId(),
             datos.color(),
+            datos.icono(),
             id
         );
     }
@@ -283,13 +289,10 @@ public class CursoAdminRepository {
                 ON r.id = u.rol_id
             WHERE u.activo = 1
               AND UPPER(r.nombre) = 'ALUMNO'
-
               AND REPLACE(TRIM(u.grado), '°', '') =
                   REPLACE(TRIM(?), '°', '')
-
               AND UPPER(TRIM(u.seccion)) =
                   UPPER(TRIM(?))
-
               AND (
                     ? = ''
                     OR LOWER(u.codigo) LIKE LOWER(?)
@@ -298,7 +301,6 @@ public class CursoAdminRepository {
                     OR LOWER(CONCAT(u.nombres, ' ', u.apellidos))
                         LIKE LOWER(?)
               )
-
               AND NOT EXISTS (
                     SELECT 1
                     FROM matriculas m
@@ -306,7 +308,6 @@ public class CursoAdminRepository {
                       AND m.curso_id = ?
                       AND m.estado = 'ACTIVA'
               )
-
             ORDER BY u.apellidos, u.nombres
             """,
             grado,

@@ -460,7 +460,7 @@ export default function CursoDetalleAdmin() {
 
         <Card style={styles.hero}>
           <IconBox
-            icon="book-outline"
+            icon={curso.icono || 'book-outline'}
             tone={curso.tono || 'blue'}
             size={64}
             iconSize={30}
@@ -1045,4 +1045,4 @@ const styles = StyleSheet.create({
     color: colors.danger,
     marginVertical: 8,
   },
-});
+}); 

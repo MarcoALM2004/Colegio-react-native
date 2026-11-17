@@ -10,6 +10,7 @@ public record CursoAdminResponse(
     String docente,
     String descripcion,
     String color,
+    String icono,
     Integer anio,
     Integer cantidadEstudiantes
 ) {}

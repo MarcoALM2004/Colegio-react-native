@@ -7,5 +7,6 @@ public record CursoAdminRequest(
     String seccion,
     Long docenteId,
     String descripcion,
-    String color
+    String color,
+    String icono
 ) {}

@@ -155,6 +155,7 @@ export function AdminDataProvider({ children, codigoUsuario }) {
     docenteId: c.docenteId ?? null,
     tono: c.color || 'blue',
     color: c.color || 'blue',
+    icono: c.icono || 'book-outline',
     anio: c.anio || new Date().getFullYear(),
     cantidadEstudiantes: Number(c.cantidadEstudiantes || 0),
     horario: Array.isArray(c.horario) ? c.horario : [],
@@ -419,68 +420,74 @@ export function AdminDataProvider({ children, codigoUsuario }) {
 
     // ---------- Cursos conectados al backend ----------
     const addCourse = async (data) => {
-      const payload = {
-        nombre: (data.nombre ?? actual?.nombre ?? '').trim(),
-        nivel: data.nivel,
-        grado: data.grado,
-        seccion: data.seccion,
-        docenteId: data.docenteId || null,
-        descripcion: data.descripcion || '',
-        color: data.tono || data.color || 'blue',
-      };
-
-      const creado = await crearCursoAdmin(payload);
-      await refreshCourses();
-
-      const course = normalizarCurso({
-        ...creado,
-        nombre: creado.nombre || payload.nombre,
-        docenteId: creado.docenteId ?? payload.docenteId,
-        color: creado.color || payload.color,
-      });
-
-      registrarActividad(
-        'school-outline',
-        'Curso creado',
-        courseName(course)
-      );
-
-      return course;
+  const payload = {
+      nombre: (data.nombre || '').trim(),
+      nivel: data.nivel,
+      grado: data.grado,
+      seccion: data.seccion,
+      docenteId: data.docenteId || null,
+      descripcion: data.descripcion || '',
+      color: data.tono || data.color || 'blue',
+      icono: data.icono || 'book-outline',
     };
+
+    const creado = await crearCursoAdmin(payload);
+    await refreshCourses();
+
+    const course = normalizarCurso({
+      ...creado,
+      nombre: creado.nombre || payload.nombre,
+      docenteId: creado.docenteId ?? payload.docenteId,
+      color: creado.color || payload.color,
+      icono: creado.icono || payload.icono,
+    });
+
+    registrarActividad(
+      'school-outline',
+      'Curso creado',
+      courseName(course)
+    );
+
+    return course;
+  };
 
     const updateCourse = async (id, data) => {
-      const actual = getCourse(id);
+    const actual = getCourse(id);
 
-      const payload = {
-        nombre: data.nombre.trim(),
-        nivel: data.nivel ?? actual?.nivel,
-        grado: data.grado ?? actual?.grado,
-        seccion: data.seccion ?? actual?.seccion,
-        docenteId:
-          data.docenteId === undefined
-            ? actual?.docenteId ?? null
-            : data.docenteId,
-        descripcion:
-          data.descripcion ?? actual?.descripcion ?? '',
-        color:
-          data.tono ||
-          data.color ||
-          actual?.color ||
-          'blue',
-      };
-
-      await actualizarCursoAdmin(id, payload);
-      await refreshCourses();
-
-      registrarActividad(
-        'create-outline',
-        'Curso actualizado',
-        courseName({
-          ...actual,
-          ...payload,
-        })
-      );
+    const payload = {
+      nombre: (data.nombre ?? actual?.nombre ?? '').trim(),
+      nivel: data.nivel ?? actual?.nivel,
+      grado: data.grado ?? actual?.grado,
+      seccion: data.seccion ?? actual?.seccion,
+      docenteId:
+        data.docenteId === undefined
+          ? actual?.docenteId ?? null
+          : data.docenteId,
+      descripcion:
+        data.descripcion ?? actual?.descripcion ?? '',
+      color:
+        data.tono ||
+        data.color ||
+        actual?.color ||
+        'blue',
+      icono:
+        data.icono ||
+        actual?.icono ||
+        'book-outline',
     };
+
+    await actualizarCursoAdmin(id, payload);
+    await refreshCourses();
+
+    registrarActividad(
+      'create-outline',
+      'Curso actualizado',
+      courseName({
+        ...actual,
+        ...payload,
+      })
+    );
+  };
 
     const deleteCourse = async (id) => {
       await eliminarCursoAdmin(id);

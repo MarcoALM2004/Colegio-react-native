@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 
-import { courses, initialTasks } from '../data/studentMockData';
+import { Ionicons } from '@expo/vector-icons';
+import { listarMisCursos } from '../service/cursosService';
 import { Page, Card, Icon, colors } from '../components/StudentUI';
 
 const tabs = [
@@ -15,14 +21,113 @@ const tabs = [
 ];
 
 export default function CursoDetalleStudent({ route, navigation }) {
-  const course =
-    courses.find((item) => item.id === route.params?.id) || courses[2];
+  const cursoId = route?.params?.id;
 
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [tab, setTab] = useState('Inicio');
 
-  const courseTasks = initialTasks
-    .filter((task) => task.curso === course.nombre)
-    .slice(0, 2);
+  const cargarCurso = useCallback(async () => {
+    if (cursoId == null) {
+      setError('No se recibió el identificador del curso.');
+      setCourse(null);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const cursos = await listarMisCursos();
+
+      const encontrado = cursos.find(
+        (item) => String(item.id) === String(cursoId)
+      );
+
+      if (!encontrado) {
+        setCourse(null);
+        setError('No se encontró este curso entre tus matrículas activas.');
+        return;
+      }
+
+      setCourse(encontrado);
+    } catch (e) {
+      setCourse(null);
+      setError(e.message || 'No se pudo cargar el curso.');
+    } finally {
+      setLoading(false);
+    }
+  }, [cursoId]);
+
+  useEffect(() => {
+    cargarCurso();
+  }, [cargarCurso]);
+
+  if (loading) {
+    return (
+      <Page
+        title="Cargando curso..."
+        subtitle="Estamos obteniendo la información del curso."
+        action={
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons
+              name="arrow-back"
+              size={23}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+        }
+      >
+        <Card style={styles.center}>
+          <ActivityIndicator size="large" color={colors.blue} />
+          <Text style={styles.body}>Cargando información...</Text>
+        </Card>
+      </Page>
+    );
+  }
+
+  if (error || !course) {
+    return (
+      <Page
+        title="Curso"
+        subtitle="No se pudo mostrar la información."
+        action={
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons
+              name="arrow-back"
+              size={23}
+              color={colors.text}
+            />
+          </TouchableOpacity>
+        }
+      >
+        <Card style={styles.center}>
+          <Ionicons
+            name="alert-circle-outline"
+            size={40}
+            color="#DC2626"
+          />
+
+          <Text style={styles.errorText}>
+            {error || 'No se encontró el curso.'}
+          </Text>
+
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={cargarCurso}
+          >
+            <Text style={styles.retryText}>
+              Volver a intentar
+            </Text>
+          </TouchableOpacity>
+        </Card>
+      </Page>
+    );
+  }
+
+  const colorCurso = course.color || colors.blue;
 
   return (
     <Page
@@ -30,16 +135,41 @@ export default function CursoDetalleStudent({ route, navigation }) {
       subtitle="Tu espacio para aprender y organizarte."
       action={
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={23} color={colors.text} />
+          <Ionicons
+            name="arrow-back"
+            size={23}
+            color={colors.text}
+          />
         </TouchableOpacity>
       }
     >
-      <View style={[styles.banner, { backgroundColor: course.color }]}>
-        <Ionicons name={course.icono} size={36} color="#FFFFFF" />
+      <View
+        style={[
+          styles.banner,
+          { backgroundColor: colorCurso },
+        ]}
+      >
+        <Ionicons
+          name={course.icono || 'book-outline'}
+          size={36}
+          color="#FFFFFF"
+        />
 
         <View style={styles.bannerInfo}>
-          <Text style={styles.bannerTitle}>{course.nombre}</Text>
-          <Text style={styles.bannerSub}>{course.descripcion}</Text>
+          <Text style={styles.bannerTitle}>
+            {course.nombre}
+          </Text>
+
+          <Text style={styles.bannerSub}>
+            {course.grado || ''} · {course.nivel || ''}
+            {course.seccionCodigo || course.seccion
+              ? ` · Sección ${course.seccionCodigo || course.seccion}`
+              : ''}
+          </Text>
+
+          <Text style={styles.bannerSub}>
+            {course.descripcion || 'Sin descripción registrada.'}
+          </Text>
         </View>
       </View>
 
@@ -48,7 +178,10 @@ export default function CursoDetalleStudent({ route, navigation }) {
           <TouchableOpacity
             key={item}
             onPress={() => setTab(item)}
-            style={[styles.tab, tab === item && styles.tabActive]}
+            style={[
+              styles.tab,
+              tab === item && styles.tabActive,
+            ]}
           >
             <Text
               style={[
@@ -65,29 +198,47 @@ export default function CursoDetalleStudent({ route, navigation }) {
       {tab === 'Inicio' && (
         <>
           <Card>
-            <Text style={styles.section}>Información del curso</Text>
+            <Text style={styles.section}>
+              Información del curso
+            </Text>
 
             <View style={styles.info}>
-              <Icon name="person-outline" color={course.color} />
+              <Icon name="person-outline" color={colorCurso} />
               <View>
                 <Text style={styles.label}>Profesor</Text>
-                <Text style={styles.value}>{course.docente}</Text>
+                <Text style={styles.value}>
+                  {course.docente || 'No registrado'}
+                </Text>
               </View>
             </View>
 
             <View style={styles.info}>
-              <Icon name="calendar-outline" color={course.color} />
+              <Icon name="school-outline" color={colorCurso} />
               <View>
-                <Text style={styles.label}>Horario</Text>
-                <Text style={styles.value}>{course.horario}</Text>
+                <Text style={styles.label}>Grado y nivel</Text>
+                <Text style={styles.value}>
+                  {course.grado || '—'} {course.nivel || ''}
+                </Text>
               </View>
             </View>
 
             <View style={styles.info}>
-              <Icon name="location-outline" color={course.color} />
+              <Icon name="people-outline" color={colorCurso} />
               <View>
-                <Text style={styles.label}>Aula</Text>
-                <Text style={styles.value}>{course.aula}</Text>
+                <Text style={styles.label}>Sección</Text>
+                <Text style={styles.value}>
+                  {course.seccionCodigo || course.seccion || 'No registrada'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.info}>
+              <Icon name="calendar-outline" color={colorCurso} />
+              <View>
+                <Text style={styles.label}>Año escolar</Text>
+                <Text style={styles.value}>
+                  {course.anio || 'No registrado'}
+                </Text>
               </View>
             </View>
           </Card>
@@ -95,32 +246,19 @@ export default function CursoDetalleStudent({ route, navigation }) {
           <Card>
             <Text style={styles.section}>Descripción</Text>
             <Text style={styles.body}>
-              {course.descripcion} Revisa las unidades, materiales y
-              actividades publicadas por tu docente.
+              {course.descripcion ||
+                'Este curso todavía no tiene descripción.'}
             </Text>
           </Card>
 
           <Card>
-            <Text style={styles.section}>Próximas actividades</Text>
+            <Text style={styles.section}>
+              Próximas actividades
+            </Text>
 
-            {courseTasks.length > 0 ? (
-              courseTasks.map((task) => (
-                <View style={styles.activity} key={task.id}>
-                  <Icon name={task.icono} color={task.color} />
-
-                  <View style={styles.activityInfo}>
-                    <Text style={styles.value}>{task.titulo}</Text>
-                    <Text style={styles.label}>Entrega: {task.fecha}</Text>
-                  </View>
-
-                  <Text style={styles.pending}>{task.estado}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.body}>
-                No hay actividades próximas.
-              </Text>
-            )}
+            <Text style={styles.body}>
+              Todavía no hay actividades disponibles para mostrar.
+            </Text>
           </Card>
         </>
       )}
@@ -128,21 +266,21 @@ export default function CursoDetalleStudent({ route, navigation }) {
       {tab === 'Unidades' && (
         <Card>
           <Text style={styles.section}>
-            Unidad 2: Construimos conocimiento
+            Unidades de aprendizaje
           </Text>
           <Text style={styles.body}>
-            Objetivos, contenidos y sesiones disponibles para esta unidad.
+            Todavía no hay unidades publicadas en este curso.
           </Text>
         </Card>
       )}
 
       {tab === 'Materiales' && (
         <Card>
-          <Text style={styles.section}>Materiales del curso</Text>
+          <Text style={styles.section}>
+            Materiales del curso
+          </Text>
           <Text style={styles.body}>
-            {'Guía de trabajo de la unidad 2\n'}
-            {'Lectura complementaria\n'}
-            {'Presentación de la semana'}
+            Todavía no hay materiales disponibles.
           </Text>
         </Card>
       )}
@@ -151,18 +289,17 @@ export default function CursoDetalleStudent({ route, navigation }) {
         <Card>
           <Text style={styles.section}>Actividades</Text>
           <Text style={styles.body}>
-            {courseTasks
-              .map((task) => `${task.titulo} · ${task.estado}`)
-              .join('\n') || 'No hay tareas en este curso.'}
+            No hay tareas disponibles para este curso.
           </Text>
         </Card>
       )}
 
       {tab === 'Calificaciones' && (
         <Card>
-          <Text style={styles.section}>Calificación actual</Text>
-          <Text style={styles.grade}>{course.nota}</Text>
-          <Text style={styles.label}>Promedio del periodo</Text>
+          <Text style={styles.section}>Calificaciones</Text>
+          <Text style={styles.body}>
+            Las calificaciones aparecerán cuando estén conectadas al backend.
+          </Text>
         </Card>
       )}
 
@@ -179,6 +316,30 @@ export default function CursoDetalleStudent({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
+  center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    paddingVertical: 35,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#DC2626',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  retryButton: {
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    borderRadius: 9,
+    marginTop: 5,
+  },
+  retryText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 12,
+  },
   banner: {
     borderRadius: 16,
     padding: 23,
@@ -189,6 +350,7 @@ const styles = StyleSheet.create({
   },
   bannerInfo: {
     flex: 1,
+    minWidth: 0,
   },
   bannerTitle: {
     fontSize: 22,
@@ -198,7 +360,7 @@ const styles = StyleSheet.create({
   bannerSub: {
     fontSize: 12,
     color: '#FFFFFF',
-    opacity: 0.86,
+    opacity: 0.9,
     marginTop: 4,
     flexShrink: 1,
   },
@@ -250,30 +412,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 21,
     color: '#617087',
-  },
-  activity: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#EEF1F5',
-    paddingVertical: 11,
-  },
-  activityInfo: {
-    flex: 1,
-  },
-  pending: {
-    fontSize: 10,
-    color: '#D97706',
-    backgroundColor: '#FFF4DD',
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-    borderRadius: 7,
-  },
-  grade: {
-    fontSize: 40,
-    fontWeight: '800',
-    color: colors.blue,
-    textAlign: 'center',
   },
 });

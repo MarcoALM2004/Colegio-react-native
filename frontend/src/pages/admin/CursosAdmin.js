@@ -98,7 +98,7 @@ export default function CursosAdmin() {
                   }
                   left={
                     <IconBox
-                      icon="book-outline"
+                      icon={curso.icono || 'book-outline'}
                       tone={curso.tono || 'blue'}
                       size={46}
                       solid

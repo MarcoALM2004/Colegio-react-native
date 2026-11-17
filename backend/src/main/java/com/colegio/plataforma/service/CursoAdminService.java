@@ -16,14 +16,36 @@ public class CursoAdminService {
     private final CursoAdminRepository repository;
 
     private static final List<String> COLORES = List.of(
-        "blue",
-        "green",
-        "orange",
-        "purple",
-        "red",
-        "pink",
-        "cyan",
-        "indigo"
+        "blue", "green", "orange", "purple",
+        "red", "pink", "cyan", "indigo"
+    );
+
+    // Iconos permitidos para los cursos.
+    private static final List<String> ICONOS = List.of(
+        "book-outline",
+        "book",
+        "calculator-outline",
+        "flask-outline",
+        "globe-outline",
+        "earth-outline",
+        "language-outline",
+        "school-outline",
+        "library-outline",
+        "pencil-outline",
+        "color-palette-outline",
+        "musical-notes-outline",
+        "laptop-outline",
+        "desktop-outline",
+        "code-slash-outline",
+        "bulb-outline",
+        "leaf-outline",
+        "heart-outline",
+        "football-outline",
+        "fitness-outline",
+        "mic-outline",
+        "camera-outline",
+        "map-outline",
+        "time-outline"
     );
 
     public CursoAdminService(CursoAdminRepository repository) {
@@ -39,7 +61,6 @@ public class CursoAdminService {
     }
 
     public CursoAdminResponse obtenerCurso(Long id) {
-
         validarId(id);
 
         return repository.buscarPorId(id)
@@ -51,10 +72,7 @@ public class CursoAdminService {
     }
 
     @Transactional
-    public CursoAdminResponse crearCurso(
-        CursoAdminRequest request
-    ) {
-
+    public CursoAdminResponse crearCurso(CursoAdminRequest request) {
         validarDatosCurso(request);
 
         if (repository.existeCurso(
@@ -78,10 +96,8 @@ public class CursoAdminService {
         Long id,
         CursoAdminRequest request
     ) {
-
         validarId(id);
         validarDatosCurso(request);
-
         obtenerCurso(id);
 
         if (repository.existeCurso(
@@ -111,7 +127,6 @@ public class CursoAdminService {
 
     @Transactional
     public void eliminarCurso(Long id) {
-
         validarId(id);
 
         int eliminados = repository.eliminar(id);
@@ -127,9 +142,7 @@ public class CursoAdminService {
     // DOCENTES
     // =====================================================
 
-    public List<Map<String, Object>> listarDocentes(
-        String busqueda
-    ) {
+    public List<Map<String, Object>> listarDocentes(String busqueda) {
         return repository.listarDocentes(busqueda);
     }
 
@@ -141,11 +154,9 @@ public class CursoAdminService {
         Long cursoId,
         String busqueda
     ) {
-
         validarId(cursoId);
 
-        Map<String, Object> curso =
-            obtenerCursoAcademico(cursoId);
+        Map<String, Object> curso = obtenerCursoAcademico(cursoId);
 
         String grado = String.valueOf(curso.get("grado"));
         String seccion = String.valueOf(curso.get("seccion"));
@@ -162,10 +173,7 @@ public class CursoAdminService {
     // ESTUDIANTES MATRICULADOS
     // =====================================================
 
-    public List<Map<String, Object>> listarEstudiantesCurso(
-        Long cursoId
-    ) {
-
+    public List<Map<String, Object>> listarEstudiantesCurso(Long cursoId) {
         validarId(cursoId);
         obtenerCurso(cursoId);
 
@@ -181,7 +189,6 @@ public class CursoAdminService {
         Long cursoId,
         List<Long> estudiantesIds
     ) {
-
         validarId(cursoId);
         obtenerCurso(cursoId);
 
@@ -191,14 +198,12 @@ public class CursoAdminService {
             );
         }
 
-        Map<String, Object> curso =
-            obtenerCursoAcademico(cursoId);
+        Map<String, Object> curso = obtenerCursoAcademico(cursoId);
 
         String grado = String.valueOf(curso.get("grado"));
         String seccion = String.valueOf(curso.get("seccion"));
 
         for (Long estudianteId : estudiantesIds) {
-
             validarId(estudianteId);
 
             if (!repository.estudianteValido(
@@ -212,17 +217,11 @@ public class CursoAdminService {
                 );
             }
 
-            if (repository.yaMatriculado(
-                cursoId,
-                estudianteId
-            )) {
+            if (repository.yaMatriculado(cursoId, estudianteId)) {
                 continue;
             }
 
-            repository.matricular(
-                cursoId,
-                estudianteId
-            );
+            repository.matricular(cursoId, estudianteId);
         }
     }
 
@@ -231,14 +230,9 @@ public class CursoAdminService {
     // =====================================================
 
     @Transactional
-    public void retirarEstudiante(
-        Long cursoId,
-        Long estudianteId
-    ) {
-
+    public void retirarEstudiante(Long cursoId, Long estudianteId) {
         validarId(cursoId);
         validarId(estudianteId);
-
         obtenerCurso(cursoId);
 
         int retirados = repository.retirarEstudiante(
@@ -257,10 +251,7 @@ public class CursoAdminService {
     // VALIDACIONES
     // =====================================================
 
-    private void validarDatosCurso(
-        CursoAdminRequest request
-    ) {
-
+    private void validarDatosCurso(CursoAdminRequest request) {
         if (request == null) {
             throw new IllegalArgumentException(
                 "No se recibieron los datos del curso."
@@ -272,6 +263,7 @@ public class CursoAdminService {
         String grado = normalizarGrado(request.grado());
         String seccion = normalizar(request.seccion()).toUpperCase();
         String color = normalizar(request.color()).toLowerCase();
+        String icono = normalizar(request.icono());
 
         if (nombre.isBlank()) {
             throw new IllegalArgumentException(
@@ -285,8 +277,7 @@ public class CursoAdminService {
             );
         }
 
-        if (!nivel.equals("Primaria")
-                && !nivel.equals("Secundaria")) {
+        if (!nivel.equals("Primaria") && !nivel.equals("Secundaria")) {
             throw new IllegalArgumentException(
                 "El nivel debe ser Primaria o Secundaria."
             );
@@ -331,6 +322,12 @@ public class CursoAdminService {
             );
         }
 
+        if (icono.isBlank()) {
+            throw new IllegalArgumentException(
+                "Debes seleccionar un icono para el curso."
+            );
+        }
+
         if (request.descripcion() != null
                 && request.descripcion().length() > 5000) {
             throw new IllegalArgumentException(
@@ -342,7 +339,6 @@ public class CursoAdminService {
     private CursoAdminRequest normalizarRequest(
         CursoAdminRequest request
     ) {
-
         return new CursoAdminRequest(
             normalizar(request.nombre()),
             normalizar(request.nivel()),
@@ -350,14 +346,12 @@ public class CursoAdminService {
             normalizar(request.seccion()).toUpperCase(),
             request.docenteId(),
             normalizar(request.descripcion()),
-            normalizar(request.color()).toLowerCase()
+            normalizar(request.color()).toLowerCase(),
+            normalizar(request.icono())
         );
     }
 
-    private Map<String, Object> obtenerCursoAcademico(
-        Long cursoId
-    ) {
-
+    private Map<String, Object> obtenerCursoAcademico(Long cursoId) {
         Map<String, Object> curso =
             repository.buscarCursoAcademico(cursoId)
                 .orElseThrow(() ->
@@ -384,7 +378,6 @@ public class CursoAdminService {
     }
 
     private void validarId(Long id) {
-
         if (id == null || id <= 0) {
             throw new IllegalArgumentException(
                 "El identificador no es válido."
@@ -399,4 +392,4 @@ public class CursoAdminService {
     private String normalizarGrado(String grado) {
         return normalizar(grado);
     }
-}   
+}
