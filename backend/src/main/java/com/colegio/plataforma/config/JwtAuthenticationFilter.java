@@ -1,6 +1,8 @@
+
 package com.colegio.plataforma.config;
 
 import com.colegio.plataforma.service.JwtService;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 
@@ -29,6 +31,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtService = jwtService;
     }
 
+    // No procesar JWT en login ni en peticiones OPTIONS.
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+
+        return request.getMethod().equalsIgnoreCase("OPTIONS")
+                || (
+                    request.getMethod().equalsIgnoreCase("POST")
+                    && request.getServletPath().equals("/login")
+                );
+    }
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -36,9 +49,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+        String authorization =
+                request.getHeader(HttpHeaders.AUTHORIZATION);
 
-        if (authorization == null || !authorization.startsWith("Bearer ")) {
+        // Si no se envía token, Spring Security decide
+        // si permite o rechaza la petición.
+        if (authorization == null ||
+                !authorization.startsWith("Bearer ")) {
+
             filterChain.doFilter(request, response);
             return;
         }
@@ -46,26 +64,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authorization.substring(7);
 
         try {
-            Claims claims = jwtService.validarToken(token);
 
-            System.out.println("JWT VALIDADO CORRECTAMENTE");
-            System.out.println("USUARIO: " + claims.getSubject());
-            System.out.println("ROL: " + claims.get("rol"));
+            // Validar firma y expiración del token.
+            Claims claims = jwtService.validarToken(token);
 
             String codigo = claims.getSubject();
             String rol = claims.get("rol", String.class);
 
-            System.out.println("AUTH HEADER: " + authorization);
+            if (codigo == null || codigo.isBlank()) {
+                throw new IllegalArgumentException(
+                        "El token no contiene un usuario válido."
+                );
+            }
 
-            if (codigo != null &&
-                    SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (SecurityContextHolder.getContext()
+                    .getAuthentication() == null) {
 
                 List<SimpleGrantedAuthority> authorities =
-                        rol == null
+                        rol == null || rol.isBlank()
                                 ? List.of()
-                                : List.of(new SimpleGrantedAuthority(
-                                        rol.startsWith("ROLE_") ? rol : "ROLE_" + rol
-                                ));
+                                : List.of(
+                                    new SimpleGrantedAuthority(
+                                        rol.startsWith("ROLE_")
+                                                ? rol
+                                                : "ROLE_" + rol
+                                    )
+                                );
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -75,7 +99,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         );
 
                 authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request)
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
                 );
 
                 SecurityContextHolder.getContext()
@@ -83,13 +108,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
         } catch (JwtException | IllegalArgumentException e) {
+
             SecurityContextHolder.clearContext();
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+
+            response.setStatus(
+                    HttpServletResponse.SC_UNAUTHORIZED
+            );
+
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
+
             response.getWriter().write(
                     "{\"mensaje\":\"Token inválido o expirado.\"}"
             );
+
             return;
         }
 

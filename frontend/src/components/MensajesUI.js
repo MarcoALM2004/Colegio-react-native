@@ -1,7 +1,9 @@
+
 import React, {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -17,19 +19,19 @@ import {
   Alert,
   RefreshControl,
   Image,
-  Modal,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 
-import CamaraEdu from './CamaraEdu';
 import { Ionicons } from '@expo/vector-icons';
+import CamaraEdu from './CamaraEdu';
 
 import {
   listarContactos,
   obtenerConversacion,
   enviarMensaje,
   enviarImagen,
+  descargarImagen,
 } from '../service/mensajeService';
 
 import { API_URL } from '../config/api';
@@ -42,12 +44,15 @@ export default function MensajesUI({
 }) {
   const { width } = useWindowDimensions();
   const isMobile = width < 700;
-
   const usuarioId = Number(usuario?.id);
+
+  const messagesScrollRef = useRef(null);
+  const shouldScrollToEnd = useRef(false);
 
   const [contacts, setContacts] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [imageUris, setImageUris] = useState({});
 
   const [search, setSearch] = useState('');
   const [messageText, setMessageText] = useState('');
@@ -59,7 +64,6 @@ export default function MensajesUI({
 
   const [error, setError] = useState('');
 
-  // Cámara CamaraEdu.
   const [cameraVisible, setCameraVisible] = useState(false);
   const [sendingImage, setSendingImage] = useState(false);
 
@@ -70,23 +74,19 @@ export default function MensajesUI({
   const obtenerNombre = (contact) =>
     `${contact.nombres || ''} ${contact.apellidos || ''}`.trim();
 
-  const obtenerIniciales = (contact) => {
-    return `${(contact.nombres || '').charAt(0)}${(
+  const obtenerIniciales = (contact) =>
+    `${(contact.nombres || '').charAt(0)}${(
       contact.apellidos || ''
     ).charAt(0)}`.toUpperCase();
-  };
 
   const obtenerUrlImagen = (url) => {
-    if (!url) return null;
+    if (!url || typeof url !== 'string') return null;
 
-    if (
-      url.startsWith('http://') ||
-      url.startsWith('https://')
-    ) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
       return url;
     }
 
-    return `${API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+    return `${API_URL.replace(/\/+$/, '')}/${url.replace(/^\/+/, '')}`;
   };
 
   const formatearHora = (fecha) => {
@@ -102,45 +102,52 @@ export default function MensajesUI({
     });
   };
 
-  const formatearFechaContacto = (fecha) => {
-    if (!fecha) return '';
+  // Descargar imágenes protegidas con JWT.
+  useEffect(() => {
+    let activo = true;
 
-    const date = new Date(fecha);
+    const cargarImagenes = async () => {
+      for (const message of messages) {
+        const url = obtenerUrlImagen(
+          message.archivoUrl ||
+          message.archivo_url ||
+          message.urlArchivo ||
+          message.url_archivo
+        );
 
-    if (Number.isNaN(date.getTime())) return '';
+        if (!url || !message.id || imageUris[message.id]) {
+          continue;
+        }
 
-    const ahora = new Date();
+        try {
+          const uriLocal = await descargarImagen(url, message.id);
 
-    if (date.toDateString() === ahora.toDateString()) {
-      return formatearHora(fecha);
-    }
+          if (!activo) return;
 
-    return date.toLocaleDateString('es-PE', {
-      day: '2-digit',
-      month: 'short',
-    });
-  };
+          setImageUris((actuales) => ({
+            ...actuales,
+            [message.id]: uriLocal,
+          }));
+        } catch (err) {
+          console.warn(
+            `No se pudo cargar la fotografía del mensaje ${message.id}:`,
+            err.message
+          );
+        }
+      }
+    };
 
-  const filteredContacts = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    cargarImagenes();
 
-    if (!query) return contacts;
+    return () => {
+      activo = false;
+    };
+  }, [messages, imageUris]);
 
-    return contacts.filter((contact) => {
-      const nombre = obtenerNombre(contact);
-
-      return nombre.toLowerCase().includes(query);
-    });
-  }, [contacts, search]);
-
-  // ==========================================
-  // CARGAR CONTACTOS
-  // ==========================================
-
+  // CARGAR CONTACTOS.
   const cargarContactos = useCallback(
     async (silencioso = false) => {
-      if (!usuarioId || usuarioId <= 0) {
-        setError('No se pudo identificar al usuario.');
+      if (!usuarioId) {
         setLoading(false);
         return;
       }
@@ -185,10 +192,7 @@ export default function MensajesUI({
     [usuarioId, isMobile]
   );
 
-  // ==========================================
-  // CARGAR CONVERSACIÓN
-  // ==========================================
-
+  // CARGAR CONVERSACIÓN.
   const cargarConversacion = useCallback(
     async (contactoId, silencioso = false) => {
       if (!usuarioId || !contactoId) return;
@@ -210,6 +214,8 @@ export default function MensajesUI({
               : contact
           )
         );
+
+        shouldScrollToEnd.current = true;
       } catch (err) {
         if (!silencioso) {
           Alert.alert(
@@ -256,31 +262,37 @@ export default function MensajesUI({
     cargarConversacion,
   ]);
 
-  // ==========================================
-  // SELECCIONAR CONTACTO
-  // ==========================================
-
+  // Seleccionar contacto.
   const seleccionarContacto = (contactoId) => {
+    shouldScrollToEnd.current = true;
     setSelectedId(contactoId);
     setMessageText('');
   };
 
-  // ==========================================
-  // ENVIAR TEXTO
-  // ==========================================
+  // Desplazar mensajes al final.
+  const desplazarAlFinal = () => {
+    if (!shouldScrollToEnd.current) return;
 
-  const handleSendMessage = async () => {
-    const contenido = messageText.trim();
+    requestAnimationFrame(() => {
+      messagesScrollRef.current?.scrollToEnd({
+        animated: true,
+      });
+      shouldScrollToEnd.current = false;
+    });
+  };
 
-    if (!contenido || !selected || sending) return;
+  // Enviar mensaje de texto.
+  const enviarTexto = async () => {
+    if (!messageText.trim() || !selected || sending) return;
 
     try {
       setSending(true);
+      shouldScrollToEnd.current = true;
 
       await enviarMensaje({
         remitenteId: usuarioId,
         destinatarioId: Number(selected.id),
-        contenido,
+        contenido: messageText.trim(),
       });
 
       setMessageText('');
@@ -297,28 +309,21 @@ export default function MensajesUI({
     }
   };
 
-  // ==========================================
-  // ABRIR CÁMARA
-  // ==========================================
-
-  const abrirCamara = () => {
-    if (!selected || sendingImage || sending) return;
-
-    setCameraVisible(true);
-  };
-
-
-  // ==========================================
-  // ENVIAR FOTOGRAFÍA
-  // ==========================================
-
+  // Enviar fotografía.
   const confirmarEnvioImagen = async (imagen) => {
-    if (!imagen?.uri || !selected || sendingImage) {
-      return false;
+    if (!imagen?.uri) {
+      Alert.alert('Fotografía', 'No se recibió una imagen válida.');
+      return;
+    }
+
+    if (!selected) {
+      Alert.alert('Fotografía', 'Selecciona un contacto primero.');
+      return;
     }
 
     try {
       setSendingImage(true);
+      shouldScrollToEnd.current = true;
 
       await enviarImagen({
         remitenteId: usuarioId,
@@ -332,54 +337,44 @@ export default function MensajesUI({
       await cargarContactos(true);
 
       Alert.alert(
-        'Fotografía enviada',
+        'Fotografía',
         'La fotografía se envió correctamente.'
       );
-
-      return true;
-
     } catch (err) {
       Alert.alert(
-        'No se pudo enviar',
-        err.message || 'Ocurrió un error al enviar la fotografía.'
+        'Error al enviar fotografía',
+        err.message || 'No se pudo enviar la fotografía.'
       );
-
-      return false;
-
     } finally {
       setSendingImage(false);
     }
   };
-  
-  // ==========================================
-  // ACTUALIZAR
-  // ==========================================
 
-  const actualizar = () => {
-    setRefreshing(true);
-    cargarContactos();
-    if (selectedId) cargarConversacion(selectedId, true);
-  };
+  // Filtrar contactos.
+  const contactosFiltrados = useMemo(() => {
+    const texto = search.trim().toLowerCase();
 
-  // ==========================================
-  // CONTACTOS
-  // ==========================================
+    if (!texto) return contacts;
 
+    return contacts.filter((contact) =>
+      obtenerNombre(contact).toLowerCase().includes(texto)
+    );
+  }, [contacts, search]);
+
+  // Renderizar contacto.
   const renderContact = (contact) => {
-    const activo =
-      Number(selectedId) === Number(contact.id);
-
-    const nombre = obtenerNombre(contact);
+    const active =
+      Number(contact.id) === Number(selectedId);
 
     return (
       <TouchableOpacity
         key={contact.id}
-        activeOpacity={0.75}
-        onPress={() => seleccionarContacto(contact.id)}
         style={[
-          styles.contact,
-          activo && styles.activeContact,
+          styles.contactItem,
+          active && styles.contactActive,
         ]}
+        onPress={() => seleccionarContacto(contact.id)}
+        activeOpacity={0.75}
       >
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
@@ -389,7 +384,7 @@ export default function MensajesUI({
 
         <View style={styles.contactInfo}>
           <Text style={styles.name} numberOfLines={1}>
-            {nombre}
+            {obtenerNombre(contact)}
           </Text>
 
           <Text style={styles.preview} numberOfLines={1}>
@@ -399,12 +394,10 @@ export default function MensajesUI({
 
         <View style={styles.contactRight}>
           <Text style={styles.time}>
-            {formatearFechaContacto(
-              contact.fechaUltimoMensaje
-            )}
+            {formatearHora(contact.ultimoEnvio)}
           </Text>
 
-          {Number(contact.noLeidos) > 0 && (
+          {!!contact.noLeidos && (
             <View style={styles.unreadBadge}>
               <Text style={styles.unreadText}>
                 {contact.noLeidos}
@@ -416,16 +409,15 @@ export default function MensajesUI({
     );
   };
 
-  // ==========================================
-  // MENSAJES
-  // ==========================================
-
+  // Renderizar mensaje.
   const renderMessage = (message) => {
-    const mine =
-      Number(message.remitenteId) === usuarioId;
+    const mine = Number(message.remitenteId) === usuarioId;
 
     const imageUrl = obtenerUrlImagen(
-      message.archivoUrl || message.archivo_url
+      message.archivoUrl ||
+      message.archivo_url ||
+      message.urlArchivo ||
+      message.url_archivo
     );
 
     return (
@@ -454,11 +446,23 @@ export default function MensajesUI({
           )}
 
           {imageUrl && (
-            <Image
-              source={{ uri: imageUrl }}
-              style={styles.messageImage}
-              resizeMode="cover"
-            />
+            imageUris[message.id] ? (
+              <Image
+                source={{ uri: imageUris[message.id] }}
+                style={styles.messageImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={[
+                styles.messageImage,
+                styles.imageLoading,
+              ]}>
+                <ActivityIndicator
+                  size="small"
+                  color="#2563EB"
+                />
+              </View>
+            )
           )}
 
           {!!message.contenido && (
@@ -475,283 +479,235 @@ export default function MensajesUI({
           <Text
             style={[
               styles.messageTime,
-              mine && styles.myTime,
+              mine && styles.myText,
             ]}
           >
-            {formatearHora(message.enviadoEn)}
-            {mine
-              ? message.leido
-                ? '  ✓✓'
-                : '  ✓'
-              : ''}
+            {formatearHora(
+              message.enviadoEn || message.enviado_en
+            )}
           </Text>
         </View>
       </View>
     );
   };
 
-  // ==========================================
-  // VISTA PRINCIPAL
-  // ==========================================
+  // Actualizar contactos.
+  const actualizar = () => {
+    setRefreshing(true);
+    cargarContactos();
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.heading}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+        </View>
       </View>
 
-      <View
-        style={[
-          styles.panel,
-          isMobile && styles.mobilePanel,
-        ]}
-      >
-        {/* CONTACTOS */}
+      <View style={styles.content}>
+        <View
+          style={[
+            styles.contactsPanel,
+            isMobile && styles.mobilePanel,
+            isMobile && selectedId && styles.hiddenPanel,
+          ]}
+        >
+          <View style={styles.searchContainer}>
+            <Ionicons
+              name="search-outline"
+              size={18}
+              color="#64748B"
+            />
 
-        {(!isMobile || !selectedId) && (
-          <View
-            style={[
-              styles.sidebar,
-              isMobile && styles.mobileSidebar,
-            ]}
-          >
-            <View style={styles.sidebarHeader}>
-              <View>
-                <Text style={styles.sectionTitle}>
-                  Conversaciones
-                </Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Buscar contacto..."
+              placeholderTextColor="#94A3B8"
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
 
-                <Text style={styles.sectionSubtitle}>
-                  {contacts.length} contacto(s)
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                onPress={actualizar}
-                style={styles.refreshButton}
-              >
-                <Ionicons
-                  name="refresh"
-                  size={19}
-                  color="#2563EB"
-                />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.searchContainer}>
-              <Ionicons
-                name="search"
-                size={18}
-                color="#94A3B8"
-              />
-
-              <TextInput
-                value={search}
-                onChangeText={setSearch}
-                placeholder={
-                  isTeacher
-                    ? 'Buscar estudiante...'
-                    : 'Buscar docente...'
-                }
-                placeholderTextColor="#94A3B8"
-                style={styles.search}
-              />
-            </View>
-
-            {loading ? (
+          {loading ? (
+            <View style={styles.center}>
               <ActivityIndicator
                 size="large"
                 color="#2563EB"
-                style={styles.loader}
               />
-            ) : error ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.loadingText}>
+                Cargando contactos...
+              </Text>
+            </View>
+          ) : error ? (
+            <View style={styles.center}>
+              <Text style={styles.errorText}>{error}</Text>
 
-                <TouchableOpacity
-                  onPress={() => cargarContactos()}
-                  style={styles.retryButton}
-                >
-                  <Text style={styles.retryText}>
-                    Reintentar
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <ScrollView
-                style={styles.list}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={actualizar}
-                  />
-                }
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => cargarContactos()}
               >
-                {filteredContacts.map(renderContact)}
-
-                {filteredContacts.length === 0 && (
-                  <Text style={styles.empty}>
-                    No se encontraron contactos.
-                  </Text>
-                )}
-              </ScrollView>
-            )}
-          </View>
-        )}
-
-        {/* CONVERSACIÓN */}
-
-        {(!isMobile || selectedId) && selected && (
-          <KeyboardAvoidingView
-            style={styles.chat}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          >
-            <View style={styles.chatHeader}>
-              {isMobile && (
-                <TouchableOpacity
-                  onPress={() => setSelectedId(null)}
-                  style={styles.backButton}
-                >
-                  <Ionicons
-                    name="arrow-back"
-                    size={23}
-                    color="#2563EB"
-                  />
-                </TouchableOpacity>
+                <Text style={styles.retryText}>Reintentar</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <ScrollView
+              style={styles.contactsScroll}
+              contentContainerStyle={styles.contactsScrollContent}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={actualizar}
+                />
+              }
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+            >
+              {contactosFiltrados.length === 0 ? (
+                <Text style={styles.emptyText}>
+                  No se encontraron contactos.
+                </Text>
+              ) : (
+                contactosFiltrados.map(renderContact)
               )}
+            </ScrollView>
+          )}
+        </View>
 
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {obtenerIniciales(selected)}
-                </Text>
-              </View>
-
-              <View style={styles.contactInfo}>
-                <Text style={styles.name}>
-                  {obtenerNombre(selected)}
-                </Text>
-
-                <Text style={styles.role}>
-                  {selected.rol === 'DOCENTE'
-                    ? 'Docente'
-                    : selected.rol === 'ADMIN'
-                      ? 'Administrador'
-                      : 'Estudiante'}
-                </Text>
-              </View>
-            </View>
-
-            {loadingChat ? (
-              <View style={styles.chatLoader}>
-                <ActivityIndicator
-                  size="large"
-                  color="#2563EB"
-                />
-              </View>
-            ) : (
-              <ScrollView
-                style={styles.messagesArea}
-                contentContainerStyle={styles.messages}
-              >
-                {messages.map(renderMessage)}
-
-                {messages.length === 0 && (
-                  <View style={styles.emptyChat}>
+        <View
+          style={[
+            styles.chat,
+            isMobile && !selectedId && styles.hiddenPanel,
+            isMobile && styles.mobileChat,
+          ]}
+        >
+          {selected ? (
+            <>
+              <View style={styles.chatHeader}>
+                {isMobile && (
+                  <TouchableOpacity
+                    onPress={() => setSelectedId(null)}
+                    style={styles.backButton}
+                  >
                     <Ionicons
-                      name="chatbubble-ellipses-outline"
-                      size={40}
-                      color="#94A3B8"
+                      name="arrow-back"
+                      size={22}
+                      color="#1E293B"
                     />
+                  </TouchableOpacity>
+                )}
 
-                    <Text style={styles.emptyTitle}>
-                      Inicia la conversación
-                    </Text>
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>
+                    {obtenerIniciales(selected)}
+                  </Text>
+                </View>
 
+                <View style={styles.chatHeaderInfo}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {obtenerNombre(selected)}
+                  </Text>
+
+                  <Text style={styles.role}>
+                    {selected.rol || 'Contacto'}
+                  </Text>
+                </View>
+              </View>
+
+              <KeyboardAvoidingView
+                style={styles.chatBody}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={0}
+              >
+                <ScrollView
+                  ref={messagesScrollRef}
+                  style={styles.messagesArea}
+                  contentContainerStyle={styles.messages}
+                  keyboardShouldPersistTaps="handled"
+                  nestedScrollEnabled
+                  onContentSizeChange={desplazarAlFinal}
+                >
+                  {loadingChat ? (
+                    <ActivityIndicator
+                      size="large"
+                      color="#2563EB"
+                    />
+                  ) : messages.length === 0 ? (
                     <Text style={styles.emptyText}>
-                      Envía el primer mensaje a{' '}
-                      {selected.nombres}.
+                      Todavía no hay mensajes. ¡Empieza la conversación!
                     </Text>
-                  </View>
-                )}
-              </ScrollView>
-            )}
+                  ) : (
+                    messages.map(renderMessage)
+                  )}
+                </ScrollView>
 
-            {/* COMPOSITOR */}
+                <View style={styles.inputArea}>
+                  <TouchableOpacity
+                    style={styles.attachButton}
+                    onPress={() => setCameraVisible(true)}
+                    disabled={sendingImage}
+                  >
+                    {sendingImage ? (
+                      <ActivityIndicator color="#2563EB" />
+                    ) : (
+                      <Ionicons
+                        name="camera-outline"
+                        size={24}
+                        color="#2563EB"
+                      />
+                    )}
+                  </TouchableOpacity>
 
-            <View style={styles.composer}>
-              <TouchableOpacity
-                onPress={abrirCamara}
-                disabled={sendingImage || sending}
-                style={styles.cameraButton}
-              >
-                <Ionicons
-                  name="camera"
-                  size={24}
-                  color="#2563EB"
-                />
-              </TouchableOpacity>
-
-              <TextInput
-                value={messageText}
-                onChangeText={setMessageText}
-                onSubmitEditing={handleSendMessage}
-                placeholder="Escribe un mensaje..."
-                placeholderTextColor="#94A3B8"
-                style={styles.input}
-                multiline
-                maxLength={5000}
-              />
-
-              <TouchableOpacity
-                onPress={handleSendMessage}
-                disabled={!messageText.trim() || sending}
-                style={[
-                  styles.sendButton,
-                  (!messageText.trim() || sending) &&
-                    styles.disabledButton,
-                ]}
-              >
-                {sending ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Ionicons
-                    name="send"
-                    size={19}
-                    color="#FFFFFF"
+                  <TextInput
+                    style={styles.messageInput}
+                    placeholder="Escribe un mensaje..."
+                    placeholderTextColor="#94A3B8"
+                    value={messageText}
+                    onChangeText={setMessageText}
+                    multiline
+                    maxLength={2000}
                   />
-                )}
-              </TouchableOpacity>
-            </View>
-          </KeyboardAvoidingView>
-        )}
 
-        {!loading && !error && !selected && (
-          <View style={styles.noChat}>
-            <View style={styles.emptyContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.sendButton,
+                      (!messageText.trim() || sending) &&
+                        styles.sendButtonDisabled,
+                    ]}
+                    onPress={enviarTexto}
+                    disabled={sending || !messageText.trim()}
+                  >
+                    {sending ? (
+                      <ActivityIndicator
+                        color="#FFFFFF"
+                        size="small"
+                      />
+                    ) : (
+                      <Ionicons
+                        name="send"
+                        size={19}
+                        color="#FFFFFF"
+                      />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </KeyboardAvoidingView>
+            </>
+          ) : (
+            <View style={styles.center}>
               <Ionicons
                 name="chatbubbles-outline"
-                size={44}
+                size={48}
                 color="#94A3B8"
               />
-
-              <Text style={styles.emptyTitle}>
-                {contacts.length === 0
-                  ? 'Todavía no tienes contactos'
-                  : 'Selecciona una conversación'}
-              </Text>
-
               <Text style={styles.emptyText}>
-                {contacts.length === 0
-                  ? 'Los contactos aparecerán cuando exista una relación académica activa.'
-                  : 'Elige un contacto para consultar sus mensajes.'}
+                Selecciona un contacto para comenzar.
               </Text>
             </View>
-          </View>
-        )}
+          )}
+        </View>
       </View>
-
-      {/* CÁMARA CAMARAEDU */}
 
       <CamaraEdu
         visible={cameraVisible}
@@ -763,136 +719,117 @@ export default function MensajesUI({
   );
 }
 
-// ==========================================
-// ESTILOS
-// ==========================================
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    width: '100%',
-    padding: 14,
-    backgroundColor: '#F8FAFC',
+    minHeight: 0,
+    backgroundColor: '#FFFFFF',
   },
 
-  heading: {
-    marginBottom: 14,
+  header: {
+    flexShrink: 0,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
   },
 
   title: {
-    fontSize: 23,
-    fontWeight: '700',
-    color: '#172554',
+    fontSize: 21,
+    fontWeight: '800',
+    color: '#0F172A',
   },
 
   subtitle: {
-    marginTop: 4,
     fontSize: 12,
     color: '#64748B',
-  },
-
-  panel: {
-    flex: 1,
-    minHeight: 450,
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-
-  mobilePanel: {
-    minHeight: 480,
-  },
-
-  sidebar: {
-    width: 310,
-    padding: 12,
-    borderRightWidth: 1,
-    borderRightColor: '#E2E8F0',
-  },
-
-  mobileSidebar: {
-    width: '100%',
-    borderRightWidth: 0,
-  },
-
-  sidebarHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#172554',
-  },
-
-  sectionSubtitle: {
-    fontSize: 11,
-    color: '#94A3B8',
     marginTop: 3,
   },
 
-  refreshButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#EFF6FF',
+  content: {
+    flex: 1,
+    minHeight: 0,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+
+  contactsPanel: {
+    width: 300,
+    minHeight: 0,
+    flexShrink: 0,
+    borderRightWidth: 1,
+    borderRightColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+  },
+
+  mobilePanel: {
+    width: '100%',
+    flex: 1,
+    borderRightWidth: 0,
+  },
+
+  hiddenPanel: {
+    display: 'none',
+  },
+
+  contactsScroll: {
+    flex: 1,
+    minHeight: 0,
+  },
+
+  contactsScrollContent: {
+    flexGrow: 1,
   },
 
   searchContainer: {
+    flexShrink: 0,
+    margin: 12,
+    paddingHorizontal: 11,
+    height: 42,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    borderWidth: 1,
-    borderColor: '#DCE3EC',
-    borderRadius: 10,
-    paddingHorizontal: 11,
-    marginBottom: 10,
   },
 
-  search: {
+  searchInput: {
     flex: 1,
-    paddingVertical: 11,
+    minWidth: 0,
     fontSize: 13,
-    color: '#334155',
+    color: '#1E293B',
+    paddingVertical: 0,
   },
 
-  list: {
-    flex: 1,
-  },
-
-  contact: {
+  contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     gap: 10,
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
 
-  activeContact: {
+  contactActive: {
     backgroundColor: '#EFF6FF',
   },
 
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 39,
+    height: 39,
+    flexShrink: 0,
+    borderRadius: 20,
     backgroundColor: '#DBEAFE',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   avatarText: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 13,
+    fontWeight: '800',
     color: '#1D4ED8',
   },
 
@@ -914,6 +851,7 @@ const styles = StyleSheet.create({
   },
 
   contactRight: {
+    flexShrink: 0,
     alignItems: 'flex-end',
     gap: 6,
   },
@@ -942,9 +880,17 @@ const styles = StyleSheet.create({
   chat: {
     flex: 1,
     minWidth: 0,
+    minHeight: 0,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+
+  mobileChat: {
+    width: '100%',
   },
 
   chatHeader: {
+    flexShrink: 0,
     minHeight: 66,
     padding: 11,
     flexDirection: 'row',
@@ -952,6 +898,12 @@ const styles = StyleSheet.create({
     gap: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
+    backgroundColor: '#FFFFFF',
+  },
+
+  chatHeaderInfo: {
+    flex: 1,
+    minWidth: 0,
   },
 
   role: {
@@ -964,15 +916,22 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
 
+  chatBody: {
+    flex: 1,
+    minHeight: 0,
+    backgroundColor: '#FFFFFF',
+  },
+
   messagesArea: {
     flex: 1,
+    minHeight: 0,
     backgroundColor: '#F8FAFC',
   },
 
   messages: {
+    flexGrow: 1,
     padding: 13,
     gap: 11,
-    flexGrow: 1,
     justifyContent: 'flex-end',
   },
 
@@ -987,6 +946,7 @@ const styles = StyleSheet.create({
 
   bubble: {
     maxWidth: '88%',
+    minWidth: 55,
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 14,
@@ -1003,13 +963,13 @@ const styles = StyleSheet.create({
   messageSubject: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#334155',
+    color: '#1E293B',
     marginBottom: 5,
   },
 
   messageText: {
     fontSize: 13,
-    color: '#334155',
+    color: '#1E293B',
     lineHeight: 19,
   },
 
@@ -1017,214 +977,113 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  messageImage: {
-    width: 220,
-    height: 190,
-    borderRadius: 10,
-    marginBottom: 5,
-    backgroundColor: '#E2E8F0',
-  },
-
   messageTime: {
     fontSize: 9,
     color: '#94A3B8',
-    marginTop: 6,
     textAlign: 'right',
+    marginTop: 5,
   },
 
-  myTime: {
-    color: '#DBEAFE',
+  messageImage: {
+    width: 220,
+    height: 180,
+    maxWidth: '100%',
+    borderRadius: 10,
+    marginBottom: 7,
+    backgroundColor: '#E2E8F0',
   },
 
-  composer: {
+  imageLoading: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  inputArea: {
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 7,
-    padding: 9,
+    gap: 8,
+    padding: 10,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     backgroundColor: '#FFFFFF',
   },
 
-  cameraButton: {
+  attachButton: {
     width: 42,
     height: 42,
+    flexShrink: 0,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#EFF6FF',
   },
 
-  input: {
+  messageInput: {
     flex: 1,
-    maxHeight: 105,
+    minWidth: 0,
     minHeight: 42,
-    borderWidth: 1,
-    borderColor: '#DCE3EC',
+    maxHeight: 110,
     borderRadius: 12,
-    paddingHorizontal: 11,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 13,
-    color: '#334155',
+    color: '#1E293B',
   },
 
   sendButton: {
     width: 42,
     height: 42,
-    backgroundColor: '#2563EB',
+    flexShrink: 0,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#2563EB',
   },
 
-  disabledButton: {
-    backgroundColor: '#94A3B8',
+  sendButtonDisabled: {
+    opacity: 0.55,
   },
 
-  loader: {
-    marginTop: 35,
-  },
-
-  chatLoader: {
+  center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  noChat: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  emptyContainer: {
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  emptyChat: {
-    flex: 1,
+    minHeight: 0,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
 
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#334155',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-
-  emptyText: {
+  loadingText: {
+    marginTop: 10,
+    color: '#64748B',
     fontSize: 12,
-    color: '#94A3B8',
-    textAlign: 'center',
-    marginTop: 7,
-    lineHeight: 18,
   },
 
   errorText: {
-    fontSize: 12,
     color: '#DC2626',
+    fontSize: 13,
     textAlign: 'center',
   },
 
   retryButton: {
     marginTop: 12,
-    backgroundColor: '#2563EB',
-    borderRadius: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 15,
     paddingVertical: 9,
+    borderRadius: 8,
+    backgroundColor: '#2563EB',
   },
 
   retryText: {
     color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 12,
+    fontWeight: '700',
   },
 
-  empty: {
-    padding: 20,
-    color: '#64748B',
-    fontSize: 12,
+  emptyText: {
+    color: '#94A3B8',
+    fontSize: 13,
     textAlign: 'center',
-  },
-
-  // Vista previa.
-
-  modalBackground: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 18,
-  },
-
-  previewContainer: {
-    width: '100%',
-    maxWidth: 430,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 14,
-  },
-
-  previewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-
-  previewTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#172554',
-  },
-
-  previewImage: {
-    width: '100%',
-    height: 350,
-    borderRadius: 12,
-    backgroundColor: '#F1F5F9',
-  },
-
-  previewActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 14,
-  },
-
-  cancelButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 11,
-    borderRadius: 10,
-    backgroundColor: '#F1F5F9',
-  },
-
-  cancelText: {
-    color: '#475569',
-    fontWeight: '600',
-  },
-
-  confirmButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingHorizontal: 18,
-    paddingVertical: 11,
-    borderRadius: 10,
-    backgroundColor: '#2563EB',
-    minWidth: 105,
-  },
-
-  confirmText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
+    padding: 20,
   },
 });

@@ -62,27 +62,37 @@ export default function AdminDashboard({ children, variant = 'main', title, head
   useFocusEffect(
     useCallback(() => {
       let activo = true;
+      let consultaEnCurso = false;
 
       const cargarNoLeidas = async () => {
+        // Evita acumular peticiones si el servidor tarda más de un segundo.
+        if (consultaEnCurso) return;
+
         const id = Number(profile?.id);
         if (!id) {
           if (activo) setNotificacionesNoLeidas(0);
           return;
         }
 
+        consultaEnCurso = true;
         try {
           const total = await obtenerNoLeidas(id);
           if (activo) setNotificacionesNoLeidas(Number(total) || 0);
         } catch (error) {
           console.warn('No se pudo consultar las notificaciones:', error.message);
+        } finally {
+          consultaEnCurso = false;
         }
       };
 
+      // Primera consulta inmediata y actualización automática cada segundo.
       cargarNoLeidas();
+      const intervalo = setInterval(cargarNoLeidas, 1000);
       const suscripcion = Notifications.addNotificationReceivedListener(cargarNoLeidas);
 
       return () => {
         activo = false;
+        clearInterval(intervalo);
         suscripcion.remove();
       };
     }, [profile?.id])

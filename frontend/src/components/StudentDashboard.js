@@ -28,7 +28,6 @@ export default function StudentDashboard({ children, usuario: usuarioProp }) {
   const compactSidebar = width < 1000;
   const sidebarWidth = compactSidebar ? 70 : 235;
 
-  // Usuario recibido por propiedades o por los parámetros de navegación.
   const usuario =
     usuarioProp ||
     route.params?.usuario ||
@@ -38,27 +37,35 @@ export default function StudentDashboard({ children, usuario: usuarioProp }) {
   useFocusEffect(
     useCallback(() => {
       let activo = true;
+      let consultaEnCurso = false;
 
       const cargarNoLeidas = async () => {
+        if (consultaEnCurso) return;
+
         const id = Number(usuario?.id);
         if (!id) {
           if (activo) setNotificacionesNoLeidas(0);
           return;
         }
 
+        consultaEnCurso = true;
         try {
           const total = await obtenerNoLeidas(id);
           if (activo) setNotificacionesNoLeidas(Number(total) || 0);
         } catch (error) {
           console.warn('No se pudo consultar las notificaciones:', error.message);
+        } finally {
+          consultaEnCurso = false;
         }
       };
 
       cargarNoLeidas();
+      const intervalo = setInterval(cargarNoLeidas, 1000);
       const suscripcion = Notifications.addNotificationReceivedListener(cargarNoLeidas);
 
       return () => {
         activo = false;
+        clearInterval(intervalo);
         suscripcion.remove();
       };
     }, [usuario?.id])
@@ -174,7 +181,6 @@ export default function StudentDashboard({ children, usuario: usuarioProp }) {
 
   return (
     <View style={styles.container}>
-      {/* MENÚ LATERAL: ESCRITORIO Y TABLET */}
       {!isMobile && (
         <View
           style={[
@@ -252,7 +258,6 @@ export default function StudentDashboard({ children, usuario: usuarioProp }) {
         </View>
       )}
 
-      {/* ÁREA PRINCIPAL */}
       <View style={styles.rightSide}>
         <View
           style={[
@@ -296,7 +301,6 @@ export default function StudentDashboard({ children, usuario: usuarioProp }) {
               )}
             </TouchableOpacity>
 
-            {/* USUARIO: SIN FLECHITA DESPLEGABLE */}
             <TouchableOpacity
               style={styles.userArea}
               activeOpacity={0.7}
@@ -327,28 +331,44 @@ export default function StudentDashboard({ children, usuario: usuarioProp }) {
           </View>
         </View>
 
-        {/* CONTENIDO DE CADA PÁGINA */}
-        <ScrollView
-          style={styles.pageScroll}
-          contentContainerStyle={[
-            styles.content,
-            {
-              paddingHorizontal: isMobile
-                ? 14
-                : compactSidebar
-                  ? 12
-                  : 38,
-              paddingTop: isMobile ? 16 : 25,
-              paddingBottom: isMobile ? 90 : 30,
-            },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          {children || <InicioStudent usuario={usuario} />}
-        </ScrollView>
+        {isMensajes ? (
+          <View style={styles.pageScroll}>
+            <View
+              style={[
+                styles.content,
+                {
+                  flex: 1,
+                  paddingHorizontal: isMobile ? 14 : compactSidebar ? 12 : 38,
+                  paddingTop: isMobile ? 16 : 25,
+                  paddingBottom: isMobile ? 90 : 30,
+                },
+              ]}
+            >
+              {children}
+            </View>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.pageScroll}
+            contentContainerStyle={[
+              styles.content,
+              {
+                paddingHorizontal: isMobile
+                  ? 14
+                  : compactSidebar
+                    ? 12
+                    : 38,
+                paddingTop: isMobile ? 16 : 25,
+                paddingBottom: isMobile ? 90 : 30,
+              },
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            {children || <InicioStudent usuario={usuario} />}
+          </ScrollView>
+        )}
       </View>
 
-      {/* NAVEGACIÓN INFERIOR: SOLO MÓVIL */}
       {isMobile && (
         <>
           {mostrarMas && (

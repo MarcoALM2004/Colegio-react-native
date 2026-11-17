@@ -1,5 +1,7 @@
+
 package com.colegio.plataforma.config;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,9 +19,23 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
+    // Evita que el filtro JWT se registre dos veces.
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)
-            throws Exception {
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration() {
+
+        FilterRegistrationBean<JwtAuthenticationFilter> registration =
+                new FilterRegistrationBean<>();
+
+        registration.setFilter(jwtAuthenticationFilter);
+        registration.setEnabled(false);
+
+        return registration;
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http
+    ) throws Exception {
 
         http
             .csrf(csrf -> csrf.disable())
@@ -32,43 +48,41 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
 
-                // Permitir preflight de React Native y otras solicitudes CORS
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // Inicio de sesión público
                 .requestMatchers(HttpMethod.POST, "/login").permitAll()
 
-                // Salud del servidor
                 .requestMatchers("/actuator/health").permitAll()
 
-                // Administración: solamente administradores
                 .requestMatchers("/api/admin/**")
                     .hasRole("ADMIN")
 
-                // Calificaciones: solamente docentes
                 .requestMatchers("/api/calificaciones/**")
                     .hasRole("DOCENTE")
 
-                // Los demás módulos requieren JWT válido
-                .requestMatchers("/api/**").authenticated()
+                .requestMatchers("/api/**")
+                    .authenticated()
 
-                // Cualquier otra ruta también requiere autenticación
                 .anyRequest().authenticated()
             )
 
             .exceptionHandling(exception -> exception
+
                 .authenticationEntryPoint((request, response, ex) -> {
                     response.setStatus(401);
                     response.setContentType("application/json");
                     response.setCharacterEncoding("UTF-8");
+
                     response.getWriter().write(
                         "{\"mensaje\":\"Debes iniciar sesión para acceder.\"}"
                     );
                 })
+
                 .accessDeniedHandler((request, response, ex) -> {
                     response.setStatus(403);
                     response.setContentType("application/json");
                     response.setCharacterEncoding("UTF-8");
+
                     response.getWriter().write(
                         "{\"mensaje\":\"No tienes permisos para acceder a este recurso.\"}"
                     );
