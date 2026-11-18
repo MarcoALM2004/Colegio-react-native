@@ -305,6 +305,12 @@ export const listarPublicaciones = (cursoId) => {
   return apiRequest(`${contenidoUrl(cursoId)}/foro`);
 };
 
+export const listarRespuestas = (cursoId, publicacionId) => {
+  return apiRequest(
+    `${contenidoUrl(cursoId)}/foro/${publicacionId}/respuestas`
+  );
+};
+
 export const crearPublicacion = (
   cursoId,
   contenido
@@ -315,12 +321,6 @@ export const crearPublicacion = (
       contenido,
     }),
   });
-};
-
-export const listarRespuestas = (cursoId, publicacionId) => {
-  return apiRequest(
-    `${contenidoUrl(cursoId)}/foro/${publicacionId}/respuestas`
-  );
 };
 
 export const crearRespuesta = (

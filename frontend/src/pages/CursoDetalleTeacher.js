@@ -40,6 +40,7 @@ import {
   descargarArchivo,
   calificarEntrega,
   listarPublicaciones,
+  listarRespuestas,
   crearPublicacion,
   eliminarPublicacion,
   crearRespuesta,
@@ -78,6 +79,9 @@ export default function CursoDetalleTeacher({ route, navigation }) {
   const [tasks, setTasks] = useState([]);
   const [deliveries, setDeliveries] = useState([]);
   const [forum, setForum] = useState([]);
+  const [selectedForumPost, setSelectedForumPost] = useState(null);
+  const [forumReplies, setForumReplies] = useState([]);
+  const [loadingForumReplies, setLoadingForumReplies] = useState(false);
 
   const [selectedTask, setSelectedTask] = useState(null);
   const [taskPickerVisible, setTaskPickerVisible] = useState(false);
@@ -97,6 +101,7 @@ export default function CursoDetalleTeacher({ route, navigation }) {
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(new Date());
 
+  // Actualiza un campo del formulario sin perder los demás valores.
   const actualizarFormulario = (campo, valor) => {
     setForm((actual) => ({
       ...actual,
@@ -583,6 +588,24 @@ export default function CursoDetalleTeacher({ route, navigation }) {
     cerrarFormulario();
   };
 
+  const abrirConversacion = async (publicacion) => {
+    setSelectedForumPost(publicacion);
+    setForumReplies([]);
+    setLoadingForumReplies(true);
+
+    try {
+      const respuestas = await listarRespuestas(cursoId, publicacion.id);
+      setForumReplies(Array.isArray(respuestas) ? respuestas : []);
+    } catch (e) {
+      Alert.alert(
+        'No se pudo cargar la conversación',
+        e.message || 'Inténtalo nuevamente.'
+      );
+    } finally {
+      setLoadingForumReplies(false);
+    }
+  };
+
   const abrirRespuestas = (publicacion) => {
     setEditing(publicacion);
     setReplyText('');
@@ -1030,90 +1053,187 @@ export default function CursoDetalleTeacher({ route, navigation }) {
   );
 
   const renderForo = () => (
-    <View style={styles.card}>
-      <View style={styles.sectionHeading}>
-        <Text style={styles.section}>
-          Foro del curso
-        </Text>
+    <>
+      <View style={styles.forumSection}>
+        <View style={styles.sectionHeading}>
+          <Text style={styles.section}>Foro del curso</Text>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => abrirFormulario()}
-        >
-          <Ionicons name="add" size={17} color="#FFFFFF" />
-          <Text style={styles.addText}>Publicar</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => abrirFormulario()}
+          >
+            <Ionicons name="add" size={17} color="#FFFFFF" />
+            <Text style={styles.addText}>Publicar</Text>
+          </TouchableOpacity>
+        </View>
 
-      {forum.length === 0 ? (
-        <Text style={styles.body}>
-          Todavía no hay publicaciones.
-        </Text>
-      ) : (
-        forum.map((item) => (
-          <View key={String(item.id)} style={styles.forumCard}>
-            <Text style={styles.itemTitle}>
-              {item.usuarioNombre || item.usuario_nombre || 'Usuario'}
-            </Text>
-
-            <Text style={styles.body}>
-              {item.contenido}
-            </Text>
-
+        {forum.length === 0 ? (
+          <View style={styles.forumEmptyCard}>
+            <Text style={styles.body}>Aún no hay conversaciones en el foro.</Text>
+          </View>
+        ) : (
+          forum.map((item) => (
             <TouchableOpacity
-              onPress={() => abrirRespuestas(item)}
-              style={styles.replyButton}
+              key={String(item.id)}
+              activeOpacity={0.8}
+              onPress={() => abrirConversacion(item)}
             >
-              <Ionicons
-                name="chatbubble-outline"
-                size={15}
-                color="#2563EB"
-              />
+              <View style={styles.forumStudentCard}>
+                <View style={styles.forumPostHeader}>
+                  <View style={styles.forumAvatar}>
+                    <Ionicons name="person" size={18} color="#2563EB" />
+                  </View>
 
-              <Text style={styles.link}>
-                Responder
-              </Text>
-            </TouchableOpacity>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.forumAuthor}>
+                      {item.nombreUsuario ||
+                        item.usuarioNombre ||
+                        item.usuario_nombre ||
+                        item.autor ||
+                        'Participante'}
+                    </Text>
+                    <Text style={styles.forumDate}>
+                      {item.creadoEn || item.creado_en
+                        ? new Date(item.creadoEn || item.creado_en).toLocaleString('es-PE', {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })
+                        : ' '}
+                    </Text>
+                  </View>
 
-            {(item.respuestas || []).map((respuesta) => (
-              <View
-                key={String(respuesta.id)}
-                style={styles.reply}
-              >
-                <View style={styles.replyHeader}>
-                  <Text style={styles.itemTitle}>
-                    {respuesta.usuarioNombre || respuesta.usuario_nombre || 'Usuario'}
-                  </Text>
-
-                  <TouchableOpacity
-                    onPress={() => borrarRespuesta(item, respuesta)}
-                  >
-                    <Ionicons
-                      name="trash-outline"
-                      size={15}
-                      color="#DC2626"
-                    />
-                  </TouchableOpacity>
+                  <Ionicons name="chevron-forward" size={19} color="#94A3B8" />
                 </View>
 
-                <Text style={styles.body}>
-                  {respuesta.contenido}
+                <Text style={styles.forumPostTitle}>
+                  {item.titulo || 'Publicación del foro'}
                 </Text>
-              </View>
-            ))}
 
-            <TouchableOpacity
-              onPress={() => eliminarElemento(item)}
-              style={styles.deleteButton}
-            >
-              <Text style={styles.deleteText}>
-                Eliminar publicación
-              </Text>
+                <Text style={styles.forumPostBody} numberOfLines={3}>
+                  {item.descripcion || item.contenido || ''}
+                </Text>
+
+                <View style={styles.forumOpenRow}>
+                  <Ionicons name="chatbubble-ellipses-outline" size={16} color="#2563EB" />
+                  <Text style={styles.forumOpenText}>Ver conversación</Text>
+                </View>
+
+                <View style={styles.forumTeacherActions}>
+                  <TouchableOpacity
+                    onPress={() => eliminarElemento(item)}
+                    style={styles.deleteButton}
+                  >
+                    <Text style={styles.deleteText}>Eliminar publicación</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </TouchableOpacity>
+          ))
+        )}
+      </View>
+
+      <Modal
+        visible={!!selectedForumPost}
+        animationType="slide"
+        onRequestClose={() => setSelectedForumPost(null)}
+      >
+        <View style={styles.forumConversationModal}>
+          <View style={styles.forumConversationHeader}>
+            <TouchableOpacity
+              onPress={() => setSelectedForumPost(null)}
+              style={styles.forumBackButton}
+            >
+              <Ionicons name="arrow-back" size={22} color="#1E293B" />
+            </TouchableOpacity>
+            <Text style={styles.forumModalHeading}>Conversación</Text>
+            <View style={{ width: 38 }} />
           </View>
-        ))
-      )}
-    </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.forumConversationContent}
+          >
+            {selectedForumPost && (
+              <>
+                <View style={styles.forumDetailCard}>
+                  <Text style={styles.forumDetailTitle}>
+                    {selectedForumPost.titulo || 'Publicación del foro'}
+                  </Text>
+                  <Text style={styles.forumDetailAuthor}>
+                    {selectedForumPost.nombreUsuario ||
+                      selectedForumPost.usuarioNombre ||
+                      selectedForumPost.usuario_nombre ||
+                      selectedForumPost.autor ||
+                      'Participante'}
+                    {' · '}
+                    {selectedForumPost.creadoEn || selectedForumPost.creado_en
+                      ? new Date(selectedForumPost.creadoEn || selectedForumPost.creado_en).toLocaleString('es-PE', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })
+                      : ' '}
+                  </Text>
+                  <Text style={styles.forumDetailDescription}>
+                    {selectedForumPost.descripcion || selectedForumPost.contenido || ''}
+                  </Text>
+                </View>
+
+                <Text style={styles.forumCommentsHeading}>Comentarios</Text>
+
+                {loadingForumReplies ? (
+                  <ActivityIndicator size="small" color="#2563EB" style={{ marginTop: 18 }} />
+                ) : forumReplies.length > 0 ? (
+                  forumReplies.map((respuesta) => (
+                    <View key={String(respuesta.id)} style={styles.forumCommentCard}>
+                      <View style={styles.forumCommentHeader}>
+                        <Text style={styles.forumCommentAuthor}>
+                          {respuesta.nombreUsuario ||
+                            respuesta.usuarioNombre ||
+                            respuesta.usuario_nombre ||
+                            respuesta.autor ||
+                            'Participante'}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => borrarRespuesta(selectedForumPost, respuesta)}
+                        >
+                          <Ionicons name="trash-outline" size={16} color="#DC2626" />
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.forumCommentText}>
+                        {respuesta.contenido || ''}
+                      </Text>
+                      <Text style={styles.fileMeta}>
+                        {respuesta.creadoEn || respuesta.creado_en
+                          ? new Date(respuesta.creadoEn || respuesta.creado_en).toLocaleString('es-PE')
+                          : ''}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.body}>Todavía no hay comentarios en esta publicación.</Text>
+                )}
+              </>
+            )}
+          </ScrollView>
+
+          {selectedForumPost && (
+            <View style={styles.forumConversationFooter}>
+              <TouchableOpacity
+                style={styles.forumDeleteAction}
+                onPress={() => {
+                  const publicacion = selectedForumPost;
+                  setSelectedForumPost(null);
+                  eliminarElemento(publicacion);
+                }}
+              >
+                <Ionicons name="trash-outline" size={17} color="#DC2626" />
+                <Text style={styles.forumDeleteActionText}>Eliminar publicación</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </Modal>
+    </>
   );
 
   if (loading) {
@@ -2208,6 +2328,195 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '800',
+  },
+  forumSection: {
+    gap: 12,
+  },
+  forumEmptyCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E8EDF5',
+  },
+  forumStudentCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E8EDF5',
+  },
+  forumPostHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  forumAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#EAF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  forumAuthor: {
+    color: '#1E293B',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  forumDate: {
+    color: '#94A3B8',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  forumPostTitle: {
+    color: '#1E293B',
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 13,
+    marginBottom: 5,
+  },
+  forumPostBody: {
+    color: '#475569',
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  forumOpenRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginTop: 13,
+  },
+  forumOpenText: {
+    color: '#2563EB',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  forumTeacherActions: {
+    borderTopWidth: 1,
+    borderTopColor: '#EEF1F5',
+    marginTop: 12,
+    paddingTop: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  forumConversationModal: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  forumConversationHeader: {
+    minHeight: 58,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E8EDF5',
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  forumBackButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  forumModalHeading: {
+    color: '#1E293B',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  forumConversationContent: {
+    padding: 16,
+    paddingBottom: 24,
+  },
+  forumDetailCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E8EDF5',
+    padding: 16,
+  },
+  forumDetailTitle: {
+    color: '#1E293B',
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  forumDetailAuthor: {
+    color: '#94A3B8',
+    fontSize: 11,
+    marginTop: 7,
+  },
+  forumDetailDescription: {
+    color: '#475569',
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 14,
+  },
+  forumCommentsHeading: {
+    color: '#1E293B',
+    fontSize: 15,
+    fontWeight: '800',
+    marginTop: 22,
+    marginBottom: 10,
+  },
+  forumCommentCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8EDF5',
+    padding: 13,
+    marginBottom: 9,
+  },
+  forumCommentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  forumCommentAuthor: {
+    color: '#1E293B',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  forumCommentText: {
+    color: '#475569',
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 6,
+  },
+  forumConversationFooter: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E8EDF5',
+    padding: 14,
+    gap: 10,
+  },
+  forumReplyAction: {
+    backgroundColor: '#2563EB',
+    borderRadius: 11,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  forumReplyActionText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  forumDeleteAction: {
+    minHeight: 36,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+  forumDeleteActionText: {
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '700',
   },
   forumCard: {
     paddingVertical: 12,

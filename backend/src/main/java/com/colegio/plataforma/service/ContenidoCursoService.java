@@ -442,6 +442,7 @@ public class ContenidoCursoService {
         return material;
     }
 
+
     @Transactional
     public void eliminarMaterial(
         Long cursoId,
@@ -462,12 +463,19 @@ public class ContenidoCursoService {
             );
         }
 
-        archivos.eliminar(
-            String.valueOf(material.get("ruta_archivo"))
-        );
+        Object ruta = material.get("ruta_archivo");
+
+        if (ruta == null) {
+            ruta = material.get("recurso_url");
+        }
+
+        if (ruta != null && !String.valueOf(ruta).isBlank()) {
+            archivos.eliminar(String.valueOf(ruta));
+        }
 
         repository.eliminarMaterial(materialId, cursoId);
     }
+
 
     // -----------------------------------------------------
     // TAREAS
@@ -893,6 +901,28 @@ public class ContenidoCursoService {
         return repository.listarPublicaciones(cursoId);
     }
 
+    public List<Map<String, Object>> listarRespuestas(
+        Long cursoId,
+        Long publicacionId,
+        String codigo
+    ) {
+        exigirAccesoCurso(cursoId, codigo);
+
+        Map<String, Object> publicacion =
+            repository.buscarPublicacion(publicacionId);
+
+        if (publicacion == null
+                || !cursoId.equals(
+                    ((Number) publicacion.get("curso_id")).longValue()
+                )) {
+            throw new IllegalArgumentException(
+                "La publicación no pertenece a este curso."
+            );
+        }
+
+        return repository.listarRespuestas(publicacionId);
+    }
+
     @Transactional
     public Long crearPublicacion(
         Long cursoId,
@@ -1104,29 +1134,6 @@ public class ContenidoCursoService {
             tareaId,
             alumnoId
         );
-    }
-
-
-    public List<Map<String, Object>> listarRespuestas(
-        Long cursoId,
-        Long publicacionId,
-        String codigo
-    ) {
-        exigirAccesoCurso(cursoId, codigo);
-
-        Map<String, Object> publicacion =
-            repository.buscarPublicacion(publicacionId);
-
-        if (publicacion == null
-                || !cursoId.equals(
-                    ((Number) publicacion.get("curso_id")).longValue()
-                )) {
-            throw new IllegalArgumentException(
-                "La publicación no pertenece a este curso."
-            );
-        }
-
-        return repository.listarRespuestas(publicacionId);
     }
 
 

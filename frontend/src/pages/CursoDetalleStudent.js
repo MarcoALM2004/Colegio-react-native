@@ -1657,8 +1657,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: 3,
   },
-  
-  forumPostHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    forumPostHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   forumAvatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#EAF2FF', alignItems: 'center', justifyContent: 'center' },
   forumPostTitle: { color: colors.text, fontSize: 15, fontWeight: '800', marginTop: 13, marginBottom: 5 },
   forumOpenRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 13 },
