@@ -1,7 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiRequest } from '../config/api';
 
-export const TOKEN_KEY = '@educonnect_token';
+import {
+  apiRequest,
+  TOKEN_KEY,
+} from '../config/api';
 
 export async function login(usuario, password) {
   if (!usuario.trim() || !password) {
@@ -27,7 +29,9 @@ export async function login(usuario, password) {
   }
 
   if (!respuesta.token) {
-    throw new Error('El servidor no devolvió el token de autenticación.');
+    throw new Error(
+      'El servidor no devolvió el token de autenticación.'
+    );
   }
 
   const datos = respuesta.usuario;
@@ -46,7 +50,16 @@ export async function login(usuario, password) {
     throw new Error('El usuario tiene un rol no reconocido.');
   }
 
-  await AsyncStorage.setItem(TOKEN_KEY, respuesta.token);
+  await AsyncStorage.setItem(
+    TOKEN_KEY,
+    respuesta.token
+  );
+
+  const tokenGuardado = await AsyncStorage.getItem(TOKEN_KEY);
+
+  if (tokenGuardado !== respuesta.token) {
+    throw new Error('No se pudo guardar la sesión.');
+  }
 
   return {
     rol,

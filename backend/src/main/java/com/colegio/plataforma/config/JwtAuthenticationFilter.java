@@ -1,4 +1,3 @@
-
 package com.colegio.plataforma.config;
 
 import com.colegio.plataforma.service.JwtService;
@@ -52,16 +51,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authorization =
                 request.getHeader(HttpHeaders.AUTHORIZATION);
 
+        // DIAGNOSTICO: comprobar si llega el encabezado JWT.
+        System.out.println(
+                "========== DIAGNOSTICO JWT =========="
+        );
+
+        System.out.println(
+                "Ruta: " + request.getRequestURI()
+        );
+
+        System.out.println(
+                "Metodo: " + request.getMethod()
+        );
+
+        System.out.println(
+                "Authorization recibido: "
+                + (authorization == null ? "NULL" : "PRESENTE")
+        );
+
         // Si no se envía token, Spring Security decide
         // si permite o rechaza la petición.
         if (authorization == null ||
                 !authorization.startsWith("Bearer ")) {
 
+            System.out.println(
+                    "JWT: No se recibió un Bearer token válido."
+            );
+
+            System.out.println(
+                    "====================================="
+            );
+
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authorization.substring(7);
+        String token = authorization.substring(7).trim();
 
         try {
 
@@ -70,6 +95,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String codigo = claims.getSubject();
             String rol = claims.get("rol", String.class);
+
+            System.out.println(
+                    "JWT validado correctamente."
+            );
+
+            System.out.println(
+                    "Usuario autenticado: " + codigo
+            );
+
+            System.out.println(
+                    "Rol: " + rol
+            );
 
             if (codigo == null || codigo.isBlank()) {
                 throw new IllegalArgumentException(
@@ -105,9 +142,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
+
+                System.out.println(
+                        "JWT: Autenticacion establecida en Spring Security."
+                );
             }
 
         } catch (JwtException | IllegalArgumentException e) {
+
+            // DIAGNOSTICO: mostrar la causa sin imprimir el token.
+            System.out.println(
+                    "ERROR VALIDANDO JWT: " + e.getMessage()
+            );
 
             SecurityContextHolder.clearContext();
 
@@ -122,8 +168,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     "{\"mensaje\":\"Token inválido o expirado.\"}"
             );
 
+            System.out.println(
+                    "====================================="
+            );
+
             return;
         }
+
+        System.out.println(
+                "====================================="
+        );
 
         filterChain.doFilter(request, response);
     }

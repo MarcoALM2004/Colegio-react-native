@@ -1,27 +1,35 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const API_URL = 'http://192.168.100.5:8080';
-
 export const TOKEN_KEY = '@educonnect_token';
 
 export async function apiRequest(endpoint, options = {}) {
-  const token = await AsyncStorage.getItem(TOKEN_KEY);
+  const tokenGuardado = await AsyncStorage.getItem(TOKEN_KEY);
+  const token = tokenGuardado?.trim();
 
   const headers = {
     Accept: 'application/json',
     ...options.headers,
   };
 
+  if (endpoint !== '/login' && endpoint.startsWith('/api/')) {
+    if (!token) {
+      throw new Error(
+        'No hay una sesión activa. Inicia sesión nuevamente.'
+      );
+    }
+
+    headers.Authorization = `Bearer ${
+      token.replace(/^Bearer\s+/i, '')
+    }`;
+  }
+
   const esFormData =
     typeof FormData !== 'undefined' &&
     options.body instanceof FormData;
 
-  if (!esFormData && options.body !== undefined) {
+  if (options.body !== undefined && !esFormData) {
     headers['Content-Type'] = 'application/json';
-  }
-
-  if (token && endpoint !== '/login') {
-    headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
